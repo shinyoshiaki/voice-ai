@@ -61,12 +61,24 @@ export class Audio2Rtp {
   }
 
   private queue = new PromiseQueue();
+  speaking = false;
+  onSpeakChanged = new Event();
 
-  async inputWav(buf: Buffer) {
-    return this.queue.push(async () => {
-      this.replace = true;
+  private speak(b: boolean) {
+    if (this.speaking === b) {
+      return;
+    }
 
+    this.speaking = b;
+    this.onSpeakChanged.execute();
+  }
+
+  async inputWav(buf: Buffer, { metadata }: { metadata?: string } = {}) {
+    this.speak(true);
+    await this.queue.push(async () => {
       const filePath = `./tmp${randomUUID()}.wav`;
+
+      this.replace = true;
 
       await writeFile(filePath, buf);
       const duration = await new Promise<number>((r, f) => {
@@ -84,10 +96,12 @@ export class Audio2Rtp {
       const process = exec(
         `gst-launch-1.0 filesrc location=${filePath} ! decodebin ! audioconvert ! audioresample ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${this.port}`
       );
-
-      await new Promise((r) => setTimeout(r, duration * 1000));
+      await new Promise((r) => setTimeout(r, duration * 1000 + 500));
       await rm(filePath);
       process.kill();
     });
+    if (this.queue.queue.length === 0) {
+      this.speak(false);
+    }
   }
 }

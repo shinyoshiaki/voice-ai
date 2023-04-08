@@ -30,10 +30,13 @@ const main = async () => {
     const pc = new RTCPeerConnection();
     const transceiver = pc.addTransceiver("audio", { direction: "sendrecv" });
 
-    let aiTalking = false;
+    audio.onSpeakChanged.subscribe(() => {
+      console.log("ai", audio.speaking ? "speaking" : "done");
+    });
+
     session.onText.subscribe(async (res) => {
       try {
-        if (aiTalking) {
+        if (audio.speaking) {
           return;
         }
 
@@ -42,8 +45,9 @@ const main = async () => {
           if (res.result.length === 1) {
             return;
           }
-
-          aiTalking = true;
+          if (["えーっと"].includes(res.result)) {
+            return;
+          }
 
           const completion = await openai.createChatCompletion({
             model: "gpt-3.5-turbo",
@@ -54,12 +58,10 @@ const main = async () => {
 
           console.log("ai", prompt);
 
-          const wav = await client.speak(prompt);
-          await writeFile("./log/" + Date.now() + ".wav", wav);
-          await audio.inputWav(wav);
-
-          aiTalking = false;
-          console.log("ready");
+          for (const word of prompt.split("、").filter((v) => v)) {
+            const wav = await client.speak(word);
+            audio.inputWav(wav, { metadata: word }).catch((e) => e);
+          }
         }
 
         if (res.partial) {
