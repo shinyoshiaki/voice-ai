@@ -11,8 +11,8 @@
     "libs/*"
   ],
   "scripts": {
-    "#add-package": "npm init -w packages/a",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "#add-package": "npm init -w apps/a",
+    "voicevox": "zx scripts/voicevox.mjs"
   },
   "devDependencies": {
     "@types/jest": "^29.2.4",

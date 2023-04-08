@@ -1,0 +1,13 @@
+{
+  "name": "gpt-voice-client",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "dev": "parcel src/index.html"
+  },
+  "author": "",
+  "license": "ISC"
+}

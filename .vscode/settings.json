@@ -1,3 +1,10 @@
 {
-  "cSpell.words": ["Depacketize", "depacketizer", "voicevox", "vosk", "werift"]
+  "cSpell.words": [
+    "Depacketize",
+    "depacketizer",
+    "openai",
+    "voicevox",
+    "vosk",
+    "werift"
+  ]
 }
