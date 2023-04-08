@@ -1,0 +1,14 @@
+node_modules
+yarn-error.log
+lib
+build
+coverage
+.parcel-cache
+dist
+*.webm
+*.log
+*.key
+*.mpd
+*.mp3
+*.pcm
+vosk_model
