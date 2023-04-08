@@ -1,8 +1,16 @@
 import { createSocket } from "dgram";
 import ffmpeg from "fluent-ffmpeg";
-import { writeFile } from "fs/promises";
-import { RtpPacket, randomPort, uint16Add, uint32Add } from "werift-rtp";
+import { rm, writeFile } from "fs/promises";
+import {
+  PromiseQueue,
+  RtpPacket,
+  randomPort,
+  uint16Add,
+  uint32Add,
+} from "werift-rtp";
 import { Event } from "rx.mini";
+import { randomUUID } from "crypto";
+import { exec } from "child_process";
 
 export class Audio2Rtp {
   udp = createSocket("udp4");
@@ -21,20 +29,22 @@ export class Audio2Rtp {
       const { sequenceNumber, timestamp } = header;
 
       if (this.replace) {
-        this.replace = false;
-
         if (this.sequenceNumber != undefined) {
           this.seqOffset = uint16Add(this.sequenceNumber, -sequenceNumber);
         }
         if (this.timestamp != undefined) {
           this.timestampOffset = uint32Add(this.timestamp, -timestamp);
         }
+
+        this.replace = false;
       }
 
       header.timestamp = uint32Add(header.timestamp, this.timestampOffset);
       header.sequenceNumber = uint16Add(header.sequenceNumber, this.seqOffset);
+
       this.timestamp = header.timestamp;
       this.sequenceNumber = header.sequenceNumber;
+
       this.onRtp.execute(rtp);
     });
   }
@@ -50,22 +60,34 @@ export class Audio2Rtp {
     this.udp.bind(this.port);
   }
 
+  private queue = new PromiseQueue();
+
   async inputWav(buf: Buffer) {
-    await writeFile("./tmp.wav", buf);
-    this.replace = true;
-    await new Promise<void>((r, f) => {
-      ffmpeg("./tmp.wav")
-        .audioCodec("libopus")
-        .audioFrequency(48000)
-        .format("rtp")
-        .output(`rtp://127.0.0.1:${this.port}`)
-        .on("error", (err) => {
-          f(err);
-        })
-        .on("end", () => {
-          r();
-        })
-        .run();
+    return this.queue.push(async () => {
+      this.replace = true;
+
+      const filePath = `./tmp${randomUUID()}.wav`;
+
+      await writeFile(filePath, buf);
+      const duration = await new Promise<number>((r, f) => {
+        ffmpeg.ffprobe(filePath, (err, metadata) => {
+          if (err) {
+            f(err);
+          }
+          if (metadata) {
+            const duration = metadata.format.duration ?? 0;
+            r(duration);
+          }
+        });
+      });
+
+      const process = exec(
+        `gst-launch-1.0 filesrc location=${filePath} ! decodebin ! audioconvert ! audioresample ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${this.port}`
+      );
+
+      await new Promise((r) => setTimeout(r, duration * 1000));
+      await rm(filePath);
+      process.kill();
     });
   }
 }

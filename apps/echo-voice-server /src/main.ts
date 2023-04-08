@@ -1,16 +1,12 @@
 import { RTCPeerConnection } from "werift";
 import { Server } from "ws";
 import { SessionFactory } from "../../../libs/rtp2text/src";
-import { Configuration, OpenAIApi } from "openai";
-import { config } from "./config";
+
 import { VoicevoxClient } from "../../../libs/voicevox-client/src";
 import { Audio2Rtp } from "../../../libs/audio2rtp/src";
 import { mkdir, writeFile } from "fs/promises";
 
 const server = new Server({ port: 8888 });
-const conf = new Configuration({
-  apiKey: config.openai,
-});
 const client = new VoicevoxClient();
 
 console.log("start");
@@ -24,44 +20,19 @@ const main = async () => {
     console.log("new session");
 
     const session = await factory.create();
-    const openai = new OpenAIApi(conf);
+
     const audio = await Audio2Rtp.Create();
 
     const pc = new RTCPeerConnection();
     const transceiver = pc.addTransceiver("audio", { direction: "sendrecv" });
 
-    let aiTalking = false;
     session.onText.subscribe(async (res) => {
       try {
-        if (aiTalking) {
-          return;
-        }
-
         if (res.result) {
-          console.log("me", res.result);
-          if (res.result.length === 1) {
-            return;
-          }
-
-          aiTalking = true;
-
-          const completion = await openai.createChatCompletion({
-            model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: res.result }],
-          });
-          const prompt = completion.data.choices[0].message?.content;
-          if (!prompt) return;
-
-          console.log("ai", prompt);
-
-          const wav = await client.speak(prompt);
+          const wav = await client.speak(res.result);
           await writeFile("./log/" + Date.now() + ".wav", wav);
           await audio.inputWav(wav);
-
-          aiTalking = false;
-          console.log("ready");
         }
-
         if (res.partial) {
           console.log("recognizing", res.partial);
         }
