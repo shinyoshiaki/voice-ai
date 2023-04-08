@@ -94,9 +94,16 @@ export class Audio2Rtp {
       });
 
       const process = exec(
-        `gst-launch-1.0 filesrc location=${filePath} ! decodebin ! audioconvert ! audioresample ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${this.port}`
+        `gst-launch-1.0 filesrc location=${filePath} ! decodebin ! audioconvert ! audioresample ! audio/x-raw, rate=48000 ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${this.port}`
       );
-      await new Promise((r) => setTimeout(r, duration * 1000 + 500));
+      await new Promise((r) =>
+        setTimeout(
+          r,
+          duration * 1000 +
+            // 要調整
+            500
+        )
+      );
       await rm(filePath);
       process.kill();
     });
