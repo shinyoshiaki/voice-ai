@@ -6,12 +6,14 @@ import { RtpPacket } from "werift";
 
 export class Session {
   readonly id = randomUUID();
+  readonly onText = new Event<[{ result?: string; partial?: string }]>();
+
   private readonly rec = new vosk.Recognizer({
     model: this.model,
     sampleRate: 48000,
   });
   private readonly encoder = new OpusEncoder(48000, 1);
-  onText = new Event<[{ result?: string; partial?: string }]>();
+  private prevPartial = "";
 
   private constructor(private model: any) {}
 
@@ -29,12 +31,18 @@ export class Session {
     if (this.rec.acceptWaveform(pcm)) {
       const result: string = this.rec.result().text;
       if (result) {
-        this.onText.execute({ result: result.replaceAll(/\s+/g, "") });
+        const formatted = result.replaceAll(/\s+/g, "");
+        this.onText.execute({ result: formatted });
       }
     } else {
       const partial = this.rec.partialResult().partial;
       if (partial) {
-        this.onText.execute({ partial });
+        const formatted = partial.replaceAll(/\s+/g, "");
+        if (this.prevPartial === formatted) {
+          return;
+        }
+        this.prevPartial = formatted;
+        this.onText.execute({ partial: formatted });
       }
     }
   }
