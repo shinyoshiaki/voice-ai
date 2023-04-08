@@ -9,6 +9,7 @@ import {
   RtpSourceCallback,
   RtpTimeCallback,
   saveToFileSystem,
+  uint16Add,
   WebmCallback,
 } from "werift";
 
@@ -63,7 +64,7 @@ export class Session {
     webm.pipe(saveToFileSystem(filename()));
 
     for (;;) {
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 100));
 
       const prevPath = filename();
 
@@ -71,7 +72,7 @@ export class Session {
       const old = webm;
       webm = createWebm();
       depacketizer.pipe(webm.inputAudio);
-      index++;
+      index = uint16Add(index, 1);
       webm.pipe(saveToFileSystem(filename()));
 
       if (old.elapsed == undefined) {
@@ -79,6 +80,7 @@ export class Session {
       }
       const pcm = await this.webmToPcm(prevPath, tmpPath + "/o.pcm");
       this.recognize(pcm);
+      await rm(prevPath, { force: true });
     }
   }
 

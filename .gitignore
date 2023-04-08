@@ -11,4 +11,4 @@ dist
 *.mpd
 *.mp3
 *.pcm
-vosk_model
+vosk-model*

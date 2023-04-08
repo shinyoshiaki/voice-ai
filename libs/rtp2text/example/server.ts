@@ -6,7 +6,7 @@ import { SessionFactory } from "../src";
 const server = new Server({ port: 8888 });
 console.log("start");
 
-const factory = new SessionFactory({ modelPath: __dirname + "/vosk_model" });
+const factory = new SessionFactory({ modelPath: __dirname + "/vosk-model" });
 
 server.on("connection", async (socket) => {
   const pc = new RTCPeerConnection();
