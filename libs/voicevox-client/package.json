@@ -1,0 +1,17 @@
+{
+  "name": "voicevox-client",
+  "version": "0.0.1",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "main": "index.js",
+  "scripts": {
+    "example:client": "parcel examples/to-webrtc/client/index.html",
+    "example:webrtc": "ts-node-dev examples/to-webrtc/server.ts",
+    "voicevox": "zx scripts/voicevox.mjs"
+  },
+  "dependencies": {
+    "axios": "^1.3.5"
+  },
+  "devDependencies": {}
+}
