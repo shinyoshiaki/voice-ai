@@ -1,7 +1,7 @@
 import { RTCPeerConnection } from "werift";
 import { Server } from "ws";
 import { SessionFactory } from "../../../libs/rtp2text/src";
-import { Configuration, OpenAIApi } from "openai";
+import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import { config } from "./config";
 import { VoicevoxClient } from "../../../libs/voicevox-client/src";
 import { Audio2Rtp } from "../../../libs/audio2rtp/src";
@@ -59,6 +59,8 @@ server.on("connection", async (socket) => {
       }
     });
 
+    const conversationHistory: ChatCompletionRequestMessage[] = [];
+
     session.onText.subscribe(async (res) => {
       try {
         if (audio.speaking) {
@@ -85,12 +87,19 @@ server.on("connection", async (socket) => {
           );
 
           dc.send(JSON.stringify({ type: "thinking" }));
+
+          conversationHistory.push({ role: "user", content: recognized });
+
           const completion = await openai.createChatCompletion({
             model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: recognized }],
+            messages: conversationHistory,
           });
-          const response = completion.data.choices[0].message?.content;
-          if (!response) return;
+          const [choice] = completion.data.choices;
+          if (!choice.message) {
+            return;
+          }
+          conversationHistory.push(choice.message);
+          const response = choice.message.content;
 
           console.log("ai", response);
           dc.send(
