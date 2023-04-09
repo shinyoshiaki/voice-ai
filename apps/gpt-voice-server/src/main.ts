@@ -5,6 +5,8 @@ import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import { config } from "./config";
 import { VoicevoxClient } from "../../../libs/voicevox-client/src";
 import { Audio2Rtp } from "../../../libs/audio2rtp/src";
+import { format } from "date-fns";
+import { ja } from "date-fns/locale";
 
 const server = new Server({ port: 8888 });
 const conf = new Configuration({
@@ -61,24 +63,41 @@ server.on("connection", async (socket) => {
     });
 
     let conversationHistory: ChatCompletionRequestMessage[] = [];
-    const systemConversation: ChatCompletionRequestMessage[] = [
-      { role: "system", content: "関西弁で回答してください" },
-    ];
 
     session.onText.subscribe(async (res) => {
+      const systemConversation: ChatCompletionRequestMessage[] = [
+        {
+          role: "user",
+          content: `現在時刻は ${format(Date.now(), "HH時mm分", {
+            locale: ja,
+          })} です。時刻を聞かれたらそう答えてください`,
+        },
+      ];
+      console.log(systemConversation);
+
       try {
         if (audio.speaking) {
           return;
         }
 
         if (res.result) {
-          const recognized = res.result;
+          let recognized = res.result;
 
           if (recognized.length === 1) {
             return;
           }
           if (ngWords.includes(recognized)) {
             return;
+          }
+          if (recognized[0] === "ん") {
+            recognized = recognized.slice(1);
+          }
+
+          for (const ng of ngWords) {
+            if (recognized.startsWith(ng)) {
+              recognized = recognized.slice(ng.length);
+              break;
+            }
           }
 
           console.log("me", recognized);
@@ -134,6 +153,10 @@ server.on("connection", async (socket) => {
         }
 
         if (res.partial) {
+          if (audio.speaking) {
+            return;
+          }
+
           const recognized = res.partial;
           if (recognized.length === 1) {
             return;

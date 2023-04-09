@@ -163,7 +163,8 @@ const App: FC = () => {
         <Box>
           <Text>自分</Text>
           <Box p={1}>
-            {state.connectionState === "connected" && <Text>認識中</Text>}
+            {state.connectionState === "connected" &&
+              state.aiState === "waiting" && <Text>認識中</Text>}
             <Text>{state.recognized}</Text>
             <Button onClick={switchMute}>
               {state.muted ? "unmute" : "mute"}
