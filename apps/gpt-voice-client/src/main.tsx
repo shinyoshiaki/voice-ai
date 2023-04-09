@@ -1,13 +1,15 @@
 import React, { FC, useRef } from "react";
 import ReactDOM from "react-dom";
 
+const endpoint = "ws://localhost:8888";
+
 const peer = new RTCPeerConnection({});
 
 const App: FC = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const start = async () => {
-    const socket = new WebSocket("ws://localhost:8888");
+    const socket = new WebSocket(endpoint);
 
     const offer = await new Promise<any>(
       (r) => (socket.onmessage = (ev) => r(JSON.parse(ev.data)))

@@ -5,7 +5,7 @@ import { Configuration, OpenAIApi } from "openai";
 import { config } from "./config";
 import { VoicevoxClient } from "../../../libs/voicevox-client/src";
 import { Audio2Rtp } from "../../../libs/audio2rtp/src";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir } from "fs/promises";
 
 const server = new Server({ port: 8888 });
 const conf = new Configuration({

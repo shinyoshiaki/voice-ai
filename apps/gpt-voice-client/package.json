@@ -2,11 +2,14 @@
   "name": "gpt-voice-client",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
   "devDependencies": {},
   "scripts": {
-    "dev": "parcel src/index.html"
+    "dev": "parcel src/index.html",
+    "build": "parcel build ./src/index.html --dist-dir build --public-url ."
   },
   "author": "",
   "license": "ISC"
