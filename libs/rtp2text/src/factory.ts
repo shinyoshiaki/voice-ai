@@ -9,7 +9,11 @@ export class SessionFactory {
   constructor(private args: { modelPath: string }) {}
 
   async create() {
-    const session = await Session.Create(this.model);
+    const rec = new vosk.Recognizer({
+      model: this.model,
+      sampleRate: 48000,
+    });
+    const session = await Session.Create(rec);
     this.sessions[session.id] = session;
     return session;
   }

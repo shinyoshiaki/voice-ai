@@ -14,6 +14,8 @@ const client = new VoicevoxClient();
 
 console.log("start");
 
+console.log({ config });
+
 const sessionFactory = new SessionFactory({
   modelPath: config.modelPath,
 });
@@ -49,6 +51,12 @@ server.on("connection", async (socket) => {
 
     audio.onSpeakChanged.subscribe(() => {
       console.log("ai", audio.speaking ? "speaking" : "done");
+
+      if (audio.speaking) {
+        dc.send(JSON.stringify({ type: "speaking" }));
+      } else {
+        dc.send(JSON.stringify({ type: "waiting" }));
+      }
     });
 
     session.onText.subscribe(async (res) => {
@@ -58,24 +66,40 @@ server.on("connection", async (socket) => {
         }
 
         if (res.result) {
-          console.log("me", res.result);
-          if (res.result.length === 1) {
+          const recognized = res.result;
+          console.log("me", recognized);
+          if (recognized.length === 1) {
             return;
           }
-          if (["えーっと"].includes(res.result)) {
+          if (["えーっと", "えー", "えーと"].includes(recognized)) {
             return;
           }
 
+          dc.send(
+            JSON.stringify({
+              type: "recognized",
+              payload: recognized,
+            } as RecognizedMessage)
+          );
+
+          dc.send(JSON.stringify({ type: "thinking" }));
           const completion = await openai.createChatCompletion({
             model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: res.result }],
+            messages: [{ role: "user", content: recognized }],
           });
-          const prompt = completion.data.choices[0].message?.content;
-          if (!prompt) return;
+          const response = completion.data.choices[0].message?.content;
+          if (!response) return;
 
-          console.log("ai", prompt);
+          console.log("ai", response);
+          dc.send(
+            JSON.stringify({
+              type: "response",
+              payload: response,
+            } as ResponseMessage)
+          );
 
-          for (const word of prompt.split("、").filter((v) => v)) {
+          dc.send(JSON.stringify({ type: "talking" }));
+          for (const word of response.split("、").filter((v) => v)) {
             const wav = await client.speak(word);
             audio.inputWav(wav, { metadata: word }).catch((e) => e);
           }
@@ -99,6 +123,8 @@ server.on("connection", async (socket) => {
       });
     });
 
+    const dc = pc.createDataChannel("messaging");
+
     await pc.setLocalDescription(await pc.createOffer());
     const sdp = JSON.stringify(pc.localDescription);
     socket.send(sdp);
@@ -110,3 +136,18 @@ server.on("connection", async (socket) => {
     console.error("socket", error);
   }
 });
+
+interface MessageBase {
+  type: string;
+  payload: string;
+}
+
+interface RecognizedMessage extends MessageBase {
+  type: "recognized";
+}
+
+interface ResponseMessage extends MessageBase {
+  type: "response";
+}
+
+type Message = RecognizedMessage | ResponseMessage;

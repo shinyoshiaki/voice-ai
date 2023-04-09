@@ -1,29 +1,24 @@
 import { OpusEncoder } from "@discordjs/opus";
 import { randomUUID } from "crypto";
 import { Event } from "rx.mini";
-import vosk from "vosk";
 import { RtpPacket } from "werift";
 
 export class Session {
   readonly id = randomUUID();
   readonly onText = new Event<[{ result?: string; partial?: string }]>();
 
-  private readonly rec = new vosk.Recognizer({
-    model: this.model,
-    sampleRate: 48000,
-  });
   private readonly encoder = new OpusEncoder(48000, 1);
   private prevPartial = "";
 
-  private constructor(private model: any) {}
+  private constructor(private rec: any) {}
 
   async inputRtp(rtp: RtpPacket) {
     const decoded = this.encoder.decode(rtp.payload);
     this.recognize(decoded);
   }
 
-  static async Create(model: any) {
-    const session = new Session(model);
+  static async Create(rec: any) {
+    const session = new Session(rec);
     return session;
   }
 
@@ -47,8 +42,5 @@ export class Session {
     }
   }
 
-  stop() {
-    this.rec.free();
-    this.model.free();
-  }
+  stop() {}
 }
