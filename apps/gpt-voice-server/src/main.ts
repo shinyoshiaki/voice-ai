@@ -61,6 +61,9 @@ server.on("connection", async (socket) => {
     });
 
     let conversationHistory: ChatCompletionRequestMessage[] = [];
+    const systemConversation: ChatCompletionRequestMessage[] = [
+      { role: "system", content: "関西弁で回答してください" },
+    ];
 
     session.onText.subscribe(async (res) => {
       try {
@@ -93,7 +96,7 @@ server.on("connection", async (socket) => {
 
           const completion = await openai.createChatCompletion({
             model: "gpt-3.5-turbo",
-            messages: conversationHistory,
+            messages: [...systemConversation, ...conversationHistory],
           });
           const [choice] = completion.data.choices;
           if (!choice.message) {
@@ -103,17 +106,30 @@ server.on("connection", async (socket) => {
           const response = choice.message.content;
 
           console.log("ai", response);
+
+          let read = "";
           dc.send(
             JSON.stringify({
               type: "response",
-              payload: response,
+              payload: read,
             } as ResponseMessage)
           );
 
           dc.send(JSON.stringify({ type: "talking" }));
           for (const word of response.split("、").filter((v) => v)) {
             const wav = await client.speak(word);
-            audio.inputWav(wav, { metadata: word }).catch((e) => e);
+            audio
+              .inputWav(wav, { metadata: word })
+              .then(() => {
+                read += word;
+                dc.send(
+                  JSON.stringify({
+                    type: "response",
+                    payload: read,
+                  } as ResponseMessage)
+                );
+              })
+              .catch((e) => e);
           }
         }
 
