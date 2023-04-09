@@ -15,6 +15,7 @@ const client = new VoicevoxClient();
 console.log("start");
 
 console.log({ config });
+const ngWords = ["えーっと", "えー", "えーと"];
 
 const sessionFactory = new SessionFactory({
   modelPath: config.modelPath,
@@ -59,7 +60,7 @@ server.on("connection", async (socket) => {
       }
     });
 
-    const conversationHistory: ChatCompletionRequestMessage[] = [];
+    let conversationHistory: ChatCompletionRequestMessage[] = [];
 
     session.onText.subscribe(async (res) => {
       try {
@@ -73,7 +74,7 @@ server.on("connection", async (socket) => {
           if (recognized.length === 1) {
             return;
           }
-          if (["えーっと", "えー", "えーと"].includes(recognized)) {
+          if (ngWords.includes(recognized)) {
             return;
           }
 
@@ -117,7 +118,22 @@ server.on("connection", async (socket) => {
         }
 
         if (res.partial) {
-          console.log("recognizing", res.partial);
+          const recognized = res.partial;
+          if (recognized.length === 1) {
+            return;
+          }
+          if (ngWords.includes(recognized)) {
+            return;
+          }
+
+          console.log("recognizing", recognized);
+
+          dc.send(
+            JSON.stringify({
+              type: "recognized",
+              payload: recognized,
+            } as RecognizedMessage)
+          );
         }
       } catch (error) {
         console.error(error);
@@ -135,6 +151,16 @@ server.on("connection", async (socket) => {
     });
 
     const dc = pc.createDataChannel("messaging");
+    dc.message.subscribe((s) => {
+      const { type } = JSON.parse(s as string);
+      switch (type) {
+        case "clearHistory":
+          {
+            conversationHistory = [];
+          }
+          break;
+      }
+    });
 
     await pc.setLocalDescription(await pc.createOffer());
     const sdp = JSON.stringify(pc.localDescription);

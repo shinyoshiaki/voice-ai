@@ -38,6 +38,7 @@ const App: FC = () => {
     initialState
   );
   const localAudioRef = useRef<MediaStreamTrack>();
+  const datachannelRef = useRef<RTCDataChannel>();
 
   const start = async () => {
     const socket = new WebSocket(endpoint);
@@ -88,6 +89,7 @@ const App: FC = () => {
 
     peer.ondatachannel = (e) => {
       const dc = e.channel;
+      datachannelRef.current = dc;
       dc.onmessage = (e) => {
         const { type, payload } = JSON.parse(e.data);
         switch (type) {
@@ -176,8 +178,19 @@ const App: FC = () => {
             {state.aiState === "thinking" && <Text>思考中</Text>}
             <Text>{state.response}</Text>
           </Box>
-          <Box>
+          <Box p={1}>
             <audio controls autoPlay ref={audioRef} />
+          </Box>
+          <Box p={1}>
+            <Button
+              onClick={() => {
+                const dc = datachannelRef.current;
+                if (!dc) return;
+                dc.send(JSON.stringify({ type: "clearHistory" }));
+              }}
+            >
+              記憶を消す
+            </Button>
           </Box>
         </Box>
       </Box>
