@@ -135,20 +135,22 @@ server.on("connection", async (socket) => {
           );
 
           dc.send(JSON.stringify({ type: "talking" }));
-          for (const word of response.split("、").filter((v) => v)) {
-            const wav = await client.speak(word);
-            audio
-              .inputWav(wav, { metadata: word })
-              .then(() => {
-                read += word;
-                dc.send(
-                  JSON.stringify({
-                    type: "response",
-                    payload: read,
-                  } as ResponseMessage)
-                );
-              })
-              .catch((e) => e);
+          for (const sentence of response.split("\n").filter((v) => v)) {
+            for (const word of sentence.split("、").filter((v) => v)) {
+              const wav = await client.speak(word);
+              audio
+                .inputWav(wav, { metadata: word })
+                .then(() => {
+                  read += word;
+                  dc.send(
+                    JSON.stringify({
+                      type: "response",
+                      payload: read,
+                    } as ResponseMessage)
+                  );
+                })
+                .catch((e) => e);
+            }
           }
         }
 
@@ -206,7 +208,7 @@ server.on("connection", async (socket) => {
     socket.send(sdp);
 
     socket.on("message", (data: any) => {
-      pc.setRemoteDescription(JSON.parse(data));
+      pc.setRemoteDescription(JSON.parse(data)).catch((e) => e);
     });
   } catch (error) {
     console.error("socket", error);
