@@ -1,12 +1,29 @@
-import React, { FC, useRef } from "react";
+import React, { FC, useReducer, useRef } from "react";
 import ReactDOM from "react-dom";
+import { env } from "../../../env";
+import {
+  ChakraProvider,
+  Button,
+  Text,
+  Spinner,
+  Box,
+  HStack,
+} from "@chakra-ui/react";
 
-const endpoint = "ws://localhost:8888";
+const endpoint = env.endpoint;
 
 const peer = new RTCPeerConnection({});
 
+interface State {
+  connectionState: "new" | "connecting" | "connected" | "disconnected";
+}
+
 const App: FC = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [state, updateState] = useReducer(
+    (prev: State, next: State) => ({ ...prev, ...next }),
+    { connectionState: "new" }
+  );
 
   const start = async () => {
     const socket = new WebSocket(endpoint);
@@ -32,6 +49,27 @@ const App: FC = () => {
     const [audio] = stream.getAudioTracks();
     peer.addTrack(audio);
 
+    peer.onconnectionstatechange = () => {
+      switch (peer.connectionState) {
+        case "connecting":
+          {
+            updateState({ connectionState: "connecting" });
+          }
+          break;
+        case "connected":
+          {
+            updateState({ connectionState: "connected" });
+          }
+          break;
+        case "disconnected":
+        case "failed":
+          {
+            updateState({ connectionState: "disconnected" });
+          }
+          break;
+      }
+    };
+
     await peer.setRemoteDescription(offer);
     const answer = await peer.createAnswer();
     await peer.setLocalDescription(answer);
@@ -39,10 +77,23 @@ const App: FC = () => {
 
   return (
     <div>
-      <button onClick={start}>start</button>
-      <audio controls autoPlay ref={audioRef} />
+      <Box p={1}>
+        <HStack>
+          <Button onClick={start}>start</Button>
+          {state.connectionState === "connected" && <Text>connected</Text>}
+          {state.connectionState === "connecting" && <Spinner />}
+        </HStack>
+      </Box>
+      <Box>
+        <audio controls autoPlay ref={audioRef} />
+      </Box>
     </div>
   );
 };
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(
+  <ChakraProvider>
+    <App />
+  </ChakraProvider>,
+  document.getElementById("root")
+);

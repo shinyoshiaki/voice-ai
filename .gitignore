@@ -16,3 +16,4 @@ vosk-model*
 linux-cpu
 *.wav
 /env.ts
+/cred.ts

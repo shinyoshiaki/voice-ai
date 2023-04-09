@@ -5,7 +5,6 @@ import { Configuration, OpenAIApi } from "openai";
 import { config } from "./config";
 import { VoicevoxClient } from "../../../libs/voicevox-client/src";
 import { Audio2Rtp } from "../../../libs/audio2rtp/src";
-import { mkdir } from "fs/promises";
 
 const server = new Server({ port: 8888 });
 const conf = new Configuration({
@@ -15,17 +14,35 @@ const client = new VoicevoxClient();
 
 console.log("start");
 
-const factory = new SessionFactory({ modelPath: __dirname + "/vosk-model" });
+const sessionFactory = new SessionFactory({
+  modelPath: config.modelPath,
+});
 
-const main = async () => {
-  await mkdir("./log", { recursive: true }).catch((e) => e);
+server.on("close", () => {
+  console.log("server closed");
+});
 
-  server.on("connection", async (socket) => {
+server.on("error", (e) => {
+  console.error("server error", e);
+});
+
+server.on("connection", async (socket) => {
+  try {
     console.log("new session");
 
-    const session = await factory.create();
+    const session = await sessionFactory.create();
     const openai = new OpenAIApi(conf);
     const audio = await Audio2Rtp.Create();
+
+    socket.on("close", () => {
+      try {
+        console.log("session closed");
+        pc.close();
+        session.stop();
+      } catch (error) {
+        console.error("session close failed", error);
+      }
+    });
 
     const pc = new RTCPeerConnection();
     const transceiver = pc.addTransceiver("audio", { direction: "sendrecv" });
@@ -89,6 +106,7 @@ const main = async () => {
     socket.on("message", (data: any) => {
       pc.setRemoteDescription(JSON.parse(data));
     });
-  });
-};
-main();
+  } catch (error) {
+    console.error("socket", error);
+  }
+});
