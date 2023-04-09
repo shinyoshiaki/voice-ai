@@ -101,7 +101,7 @@ export class Audio2Rtp {
           r,
           duration * 1000 +
             // 要調整
-            500
+            200
         )
       );
       await rm(filePath);

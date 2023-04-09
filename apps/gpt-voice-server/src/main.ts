@@ -67,13 +67,15 @@ server.on("connection", async (socket) => {
 
         if (res.result) {
           const recognized = res.result;
-          console.log("me", recognized);
+
           if (recognized.length === 1) {
             return;
           }
           if (["えーっと", "えー", "えーと"].includes(recognized)) {
             return;
           }
+
+          console.log("me", recognized);
 
           dc.send(
             JSON.stringify({

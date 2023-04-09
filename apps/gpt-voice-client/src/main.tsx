@@ -80,6 +80,7 @@ const App: FC = () => {
         case "failed":
           {
             updateState({ connectionState: "disconnected" });
+            window.alert("切断されました");
           }
           break;
       }
@@ -142,7 +143,15 @@ const App: FC = () => {
       <Box p={1}>
         <HStack>
           {state.connectionState === "new" && (
-            <Button onClick={start}>start</Button>
+            <Button
+              onClick={() => {
+                start().catch((e) => {
+                  window.alert(e.message);
+                });
+              }}
+            >
+              start
+            </Button>
           )}
           {state.connectionState === "connected" && <Text>connected</Text>}
           {state.connectionState === "connecting" && <Spinner />}
@@ -162,7 +171,7 @@ const App: FC = () => {
         <Box>
           <Text>AI</Text>
           <Box>
-            {state.aiState === "waiting" && <Text>認識中</Text>}
+            {state.aiState === "waiting" && <Text>待機中</Text>}
             {state.aiState === "speaking" && <Text>発声中</Text>}
             {state.aiState === "thinking" && <Text>思考中</Text>}
             <Text>{state.response}</Text>
