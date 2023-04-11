@@ -7,7 +7,7 @@ export class VoicevoxClient {
     const query = await this.http.post(`/audio_query?speaker=1&text="${text}"`);
     const res = await this.http.post(
       `/synthesis?speaker=1`,
-      { ...query.data, speedScale: 2 },
+      { ...query.data, speedScale: 1.8 },
       {
         responseType: "arraybuffer",
       }
