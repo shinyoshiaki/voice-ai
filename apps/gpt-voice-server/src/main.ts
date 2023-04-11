@@ -8,7 +8,7 @@ import { Audio2Rtp } from "../../../libs/audio2rtp/src";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 
-const server = new Server({ port: 8888 });
+const server = new Server({ port: config.port });
 const conf = new Configuration({
   apiKey: config.openai,
 });

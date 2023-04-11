@@ -13,7 +13,8 @@
   "scripts": {
     "#add-package": "npm init -w apps/a",
     "voicevox": "zx scripts/voicevox.mjs",
-    "server": "cd apps/gpt-voice-server && npm run dev"
+    "server": "cd apps/gpt-voice-server && npm run dev",
+    "client": "cd apps/gpt-voice-client && npm run dev"
   },
   "devDependencies": {
     "@types/jest": "^29.2.4",
