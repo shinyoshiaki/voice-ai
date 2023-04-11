@@ -73,7 +73,7 @@ export class Audio2Rtp {
     this.onSpeakChanged.execute();
   }
 
-  async inputWav(buf: Buffer, { metadata }: { metadata?: string } = {}) {
+  async inputWav(buf: Buffer) {
     this.speak(true);
     await this.queue.push(async () => {
       const filePath = `./tmp${randomUUID()}.wav`;
@@ -96,15 +96,20 @@ export class Audio2Rtp {
       const process = exec(
         `gst-launch-1.0 filesrc location=${filePath} ! decodebin ! audioconvert ! audioresample ! audio/x-raw, rate=48000 ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${this.port}`
       );
+      process.on("error", (code) => {
+        console.error({ code });
+      });
       await new Promise((r) =>
         setTimeout(
           r,
           duration * 1000 +
             // 要調整
-            150
+            300
         )
       );
+
       await rm(filePath);
+
       process.kill();
     });
     if (this.queue.queue.length === 0) {

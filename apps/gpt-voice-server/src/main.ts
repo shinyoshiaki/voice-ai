@@ -39,16 +39,6 @@ server.on("connection", async (socket) => {
     const openai = new OpenAIApi(conf);
     const audio = await Audio2Rtp.Create();
 
-    socket.on("close", () => {
-      try {
-        console.log("session closed");
-        pc.close();
-        session.stop();
-      } catch (error) {
-        console.error("session close failed", error);
-      }
-    });
-
     const pc = new RTCPeerConnection();
     const transceiver = pc.addTransceiver("audio", { direction: "sendrecv" });
 
@@ -139,7 +129,7 @@ server.on("connection", async (socket) => {
             for (const word of sentence.split("、").filter((v) => v)) {
               const wav = await client.speak(word);
               audio
-                .inputWav(wav, { metadata: word })
+                .inputWav(wav)
                 .then(() => {
                   read += word;
                   dc.send(
