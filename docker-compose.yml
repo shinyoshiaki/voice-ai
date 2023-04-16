@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  voicevox:
+    image: voicevox/voicevox_engine:cpu-ubuntu20.04-latest
+    # localhost
+    network_mode: host
+    restart: always
+    ports:
+      - "50021:50021"
+  gpt-voice-server:
+    build: 
+      context: ./
+      dockerfile: ./docker/gpt-voice-server/Dockerfile
+    # localhost
+    network_mode: host
+    restart: always
+    ports:
+      - "8080:8080"

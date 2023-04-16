@@ -14,7 +14,10 @@
     "#add-package": "npm init -w apps/a",
     "voicevox": "zx scripts/voicevox.mjs",
     "server": "cd apps/gpt-voice-server && npm run dev",
-    "client": "cd apps/gpt-voice-client && npm run dev"
+    "client": "cd apps/gpt-voice-client && npm run dev",
+    "docker-build:server": "docker build -t gpt-voice-server -f ./docker/gpt-voice-server/Dockerfile .",
+    "docker-run:server": "docker run -p 8080:8080 gpt-voice-server",
+    "compose": "docker-compose up -d --build"
   },
   "devDependencies": {
     "@types/jest": "^29.2.4",
