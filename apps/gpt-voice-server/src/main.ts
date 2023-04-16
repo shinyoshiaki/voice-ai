@@ -1,17 +1,14 @@
 import { RTCPeerConnection } from "werift";
 import { Server } from "ws";
 import { SessionFactory } from "../../../libs/rtp2text/src";
-import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
+
 import { config } from "./config";
 import { VoicevoxClient } from "../../../libs/voicevox-client/src";
 import { Audio2Rtp } from "../../../libs/audio2rtp/src";
-import { format } from "date-fns";
-import { ja } from "date-fns/locale";
+import { GptSession } from "./domain/gpt";
 
 const server = new Server({ port: config.port });
-const conf = new Configuration({
-  apiKey: config.openai,
-});
+
 const client = new VoicevoxClient();
 
 console.log("start");
@@ -36,8 +33,8 @@ server.on("connection", async (socket) => {
     console.log("new session");
 
     const session = await sessionFactory.create();
-    const openai = new OpenAIApi(conf);
     const audio = await Audio2Rtp.Create();
+    const gpt = new GptSession();
 
     const pc = new RTCPeerConnection();
     const transceiver = pc.addTransceiver("audio", { direction: "sendrecv" });
@@ -52,19 +49,7 @@ server.on("connection", async (socket) => {
       }
     });
 
-    let conversationHistory: ChatCompletionRequestMessage[] = [];
-
     session.onText.subscribe(async (res) => {
-      const systemConversation: ChatCompletionRequestMessage[] = [
-        {
-          role: "user",
-          content: `現在時刻は ${format(Date.now(), "HH時mm分", {
-            locale: ja,
-          })} です。時刻を聞かれたらそう答えてください`,
-        },
-      ];
-      console.log(systemConversation);
-
       try {
         if (audio.speaking) {
           return;
@@ -101,21 +86,6 @@ server.on("connection", async (socket) => {
 
           dc.send(JSON.stringify({ type: "thinking" }));
 
-          conversationHistory.push({ role: "user", content: recognized });
-
-          const completion = await openai.createChatCompletion({
-            model: "gpt-3.5-turbo",
-            messages: [...systemConversation, ...conversationHistory],
-          });
-          const [choice] = completion.data.choices;
-          if (!choice.message) {
-            return;
-          }
-          conversationHistory.push(choice.message);
-          const response = choice.message.content;
-
-          console.log("ai", response);
-
           let read = "";
           dc.send(
             JSON.stringify({
@@ -123,6 +93,8 @@ server.on("connection", async (socket) => {
               payload: read,
             } as ResponseMessage)
           );
+
+          const response = await gpt.request(recognized);
 
           dc.send(JSON.stringify({ type: "talking" }));
           for (const sentence of response.split("\n").filter((v) => v)) {
@@ -187,7 +159,7 @@ server.on("connection", async (socket) => {
       switch (type) {
         case "clearHistory":
           {
-            conversationHistory = [];
+            gpt.clearHisotry();
           }
           break;
       }
