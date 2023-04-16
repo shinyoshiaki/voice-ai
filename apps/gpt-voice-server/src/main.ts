@@ -32,12 +32,33 @@ server.on("connection", async (socket) => {
   try {
     console.log("new session");
 
-    const session = await sessionFactory.create();
+    const textSession = await sessionFactory.create();
     const audio = await Audio2Rtp.Create();
-    const gpt = new GptSession();
+    const gptSession = new GptSession();
 
     const pc = new RTCPeerConnection();
     const transceiver = pc.addTransceiver("audio", { direction: "sendrecv" });
+
+    let read = "";
+    gptSession.onResponse.queuingSubscribe(async ({ message, end }) => {
+      const wav = await client.speak(message);
+      audio
+        .inputWav(wav)
+        .then(() => {
+          read += message;
+          dc.send(
+            JSON.stringify({
+              type: "response",
+              payload: read,
+            } as ResponseMessage)
+          );
+
+          if (end) {
+            read = "";
+          }
+        })
+        .catch(() => {});
+    });
 
     audio.onSpeakChanged.subscribe(() => {
       console.log("ai", audio.speaking ? "speaking" : "done");
@@ -49,7 +70,7 @@ server.on("connection", async (socket) => {
       }
     });
 
-    session.onText.subscribe(async (res) => {
+    textSession.onText.subscribe(async (res) => {
       try {
         if (audio.speaking) {
           return;
@@ -84,36 +105,7 @@ server.on("connection", async (socket) => {
             } as RecognizedMessage)
           );
 
-          dc.send(JSON.stringify({ type: "thinking" }));
-
-          let read = "";
-          dc.send(
-            JSON.stringify({
-              type: "response",
-              payload: read,
-            } as ResponseMessage)
-          );
-
-          const response = await gpt.request(recognized);
-
-          dc.send(JSON.stringify({ type: "talking" }));
-          for (const sentence of response.split("\n").filter((v) => v)) {
-            for (const word of sentence.split("、").filter((v) => v)) {
-              const wav = await client.speak(word);
-              audio
-                .inputWav(wav)
-                .then(() => {
-                  read += word;
-                  dc.send(
-                    JSON.stringify({
-                      type: "response",
-                      payload: read,
-                    } as ResponseMessage)
-                  );
-                })
-                .catch((e) => e);
-            }
-          }
+          await gptSession.request(recognized);
         }
 
         if (res.partial) {
@@ -149,7 +141,7 @@ server.on("connection", async (socket) => {
 
     transceiver.onTrack.subscribe((track) => {
       track.onReceiveRtp.subscribe((rtp) => {
-        session.inputRtp(rtp);
+        textSession.inputRtp(rtp);
       });
     });
 
@@ -159,7 +151,7 @@ server.on("connection", async (socket) => {
       switch (type) {
         case "clearHistory":
           {
-            gpt.clearHisotry();
+            gptSession.clearHisotry();
           }
           break;
       }
