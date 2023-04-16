@@ -9,6 +9,8 @@ import {
   Box,
   HStack,
 } from "@chakra-ui/react";
+import { Controller } from "./components/Controller";
+import { SelectModel } from "./components/SelectModel";
 
 const endpoint = env.endpoint;
 
@@ -142,6 +144,9 @@ const App: FC = () => {
 
   return (
     <div>
+      <Box p={5}>
+        <SelectModel />
+      </Box>
       <Box p={1}>
         <HStack>
           {state.connectionState === "new" && (
@@ -194,6 +199,16 @@ const App: FC = () => {
             </Button>
           </Box>
         </Box>
+      </Box>
+      <Box
+        p={2}
+        position="fixed"
+        bottom="0"
+        width="100%"
+        zIndex="sticky"
+        bg="white"
+      >
+        <Controller />
       </Box>
     </div>
   );
