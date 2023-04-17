@@ -1,4 +1,7 @@
+import Event from "rx.mini";
 import { env } from "../../../../env";
+import { atom } from "recoil";
+import { v4 } from "uuid";
 
 const endpoint = env.endpoint;
 
@@ -6,10 +9,13 @@ class CallConnection {
   peer!: RTCPeerConnection;
   localAudio!: MediaStreamTrack;
   datachannel!: RTCDataChannel;
+  onConnectionstateChange = new Event<[RTCPeerConnectionState]>();
+  onMessage = new Event<[{ type: string; payload: any }]>();
+  onAudioStream = new Event<[MediaStream]>();
 
-  async call(audioElm: HTMLAudioElement) {
+  async call() {
     const peer = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      // iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
     this.peer = peer;
     const socket = new WebSocket(endpoint);
@@ -26,9 +32,7 @@ class CallConnection {
     };
 
     peer.ontrack = (e) => {
-      const audio = audioElm;
-      audio.srcObject = new MediaStream([e.track]);
-      audio.play();
+      this.onAudioStream.execute(new MediaStream([e.track]));
     };
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -37,25 +41,7 @@ class CallConnection {
     this.localAudio = audio;
 
     peer.onconnectionstatechange = () => {
-      switch (peer.connectionState) {
-        case "connecting":
-          {
-            updateState({ connectionState: "connecting" });
-          }
-          break;
-        case "connected":
-          {
-            updateState({ connectionState: "connected" });
-          }
-          break;
-        case "disconnected":
-        case "failed":
-          {
-            updateState({ connectionState: "disconnected" });
-            window.alert("切断されました");
-          }
-          break;
-      }
+      this.onConnectionstateChange.execute(peer.connectionState);
     };
 
     peer.ondatachannel = (e) => {
@@ -63,33 +49,7 @@ class CallConnection {
       this.datachannel = dc;
       dc.onmessage = (e) => {
         const { type, payload } = JSON.parse(e.data);
-        switch (type) {
-          case "recognized":
-            {
-              updateState({ recognized: payload });
-            }
-            break;
-          case "response":
-            {
-              updateState({ response: payload });
-            }
-            break;
-          case "thinking":
-            {
-              updateState({ aiState: "thinking" });
-            }
-            break;
-          case "speaking":
-            {
-              updateState({ aiState: "speaking" });
-            }
-            break;
-          case "waiting":
-            {
-              updateState({ aiState: "waiting" });
-            }
-            break;
-        }
+        this.onMessage.execute({ type, payload });
       };
     };
 
@@ -97,6 +57,15 @@ class CallConnection {
     const answer = await peer.createAnswer();
     await peer.setLocalDescription(answer);
   }
+
+  sendMessage(type: string, payload: any = {}) {
+    this.datachannel.send(JSON.stringify(type, payload));
+  }
 }
 
-export const peerConnection = new CallConnection();
+export const callConnection = new CallConnection();
+
+export const connectionStateAtom = atom<RTCPeerConnectionState>({
+  key: v4(),
+  default: "new",
+});
