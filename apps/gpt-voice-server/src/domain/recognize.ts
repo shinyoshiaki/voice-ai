@@ -6,7 +6,7 @@ import { RtpPacket } from "werift";
 const sessionFactory = new SessionFactory({
   modelPath: config.modelPath,
 });
-const ngWords = ["えーっと", "えー", "えーと"];
+const ngWords = ["えーっと", "えー", "えーと", "えっとー"];
 
 export class Recognize {
   session!: Session;

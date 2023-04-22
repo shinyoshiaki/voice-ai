@@ -57,7 +57,7 @@ class CallConnection {
   }
 
   sendMessage(type: string, payload: any = {}) {
-    this.datachannel.send(JSON.stringify(type, payload));
+    this.datachannel.send(JSON.stringify({ type, payload }));
   }
 }
 

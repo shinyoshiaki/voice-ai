@@ -63,6 +63,7 @@ export class Audio2Rtp {
   private queue = new PromiseQueue();
   speaking = false;
   onSpeakChanged = new Event();
+  stopped = false;
 
   private speak(b: boolean) {
     if (this.speaking === b) {
@@ -73,7 +74,19 @@ export class Audio2Rtp {
     this.onSpeakChanged.execute();
   }
 
+  async stop() {
+    this.stopped = true;
+
+    const needWait = this.queue.queue.length;
+    this.queue.queue = [];
+    if (needWait) {
+      await this.onSpeakChanged.asPromise();
+    }
+  }
+
   async inputWav(buf: Buffer) {
+    this.stopped = false;
+
     this.speak(true);
     await this.queue.push(async () => {
       const filePath = `./tmp${randomUUID()}.wav`;

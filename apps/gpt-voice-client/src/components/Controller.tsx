@@ -46,10 +46,16 @@ export const Controller: FC<{}> = () => {
     }
   };
 
+  const stop = () => {
+    callConnection.sendMessage("stop");
+  };
+
   return (
     <Box>
       <Center p={2}>
-        <Button leftIcon={<BsSquare />}>stop</Button>
+        <Button onClick={stop} leftIcon={<BsSquare />}>
+          stop
+        </Button>
       </Center>
       <HStack>
         <IconButton

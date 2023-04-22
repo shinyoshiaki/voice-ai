@@ -1,7 +1,5 @@
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import { config } from "../config";
-import { format } from "date-fns";
-import { ja } from "date-fns/locale";
 import { IncomingMessage } from "http";
 import { Event } from "rx.mini";
 
@@ -15,6 +13,7 @@ export class GptSession {
   onResponse = new Event<[{ message: string; end?: boolean }]>();
   private messageBuffer: string[] = [];
   private marks = ["、", "。", "・"];
+  stopped = false;
 
   private get systemConversation(): ChatCompletionRequestMessage[] {
     return [];
@@ -28,7 +27,14 @@ export class GptSession {
     }
   }
 
+  stop() {
+    this.messageBuffer = [];
+    this.onResponse.taskQueue.queue = [];
+    this.stopped = true;
+  }
+
   async request(message: string): Promise<void> {
+    this.stopped = false;
     this.conversationHistory.push({ role: "user", content: message });
 
     const completion = await this.openai.createChatCompletion(
@@ -41,6 +47,10 @@ export class GptSession {
     );
     const stream = completion.data as unknown as IncomingMessage;
     for await (const chunk of stream as unknown as Promise<Buffer>[]) {
+      if (this.stopped) {
+        break;
+      }
+
       const lines: string[] = chunk
         .toString("utf8")
         .split("\n")

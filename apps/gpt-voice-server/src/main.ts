@@ -29,12 +29,19 @@ server.on("connection", async (socket) => {
     const chat = new ChatLog();
 
     const connection = new CallConnection();
-    connection.onMessage.subscribe((s) => {
+    connection.onMessage.subscribe(async (s) => {
       const { type } = JSON.parse(s as string);
       switch (type) {
         case "clearHistory":
           {
             gptSession.clearHistory();
+          }
+          break;
+        case "stop":
+          {
+            gptSession.stop();
+            await audio.stop();
+            chat.end(chat.content);
           }
           break;
       }
@@ -65,13 +72,15 @@ server.on("connection", async (socket) => {
       audio
         .inputWav(wav)
         .then(() => {
-          connection.send({
-            type: "response",
-            payload: chat.put(message),
-          });
+          if (!gptSession.stopped) {
+            connection.send({
+              type: "response",
+              payload: chat.put(message),
+            });
 
-          if (end) {
-            chat.end(chat.content);
+            if (end) {
+              chat.end(chat.content);
+            }
           }
         })
         .catch(() => {});
