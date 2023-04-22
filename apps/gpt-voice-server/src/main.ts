@@ -1,4 +1,3 @@
-import { RTCPeerConnection } from "werift";
 import { Server } from "ws";
 import { SessionFactory } from "../../../libs/rtp2text/src";
 
@@ -6,6 +5,8 @@ import { config } from "./config";
 import { VoicevoxClient } from "../../../libs/voicevox-client/src";
 import { Audio2Rtp } from "../../../libs/audio2rtp/src";
 import { GptSession } from "./domain/gpt";
+import { CallConnection } from "./domain/connection";
+import { ChatLog } from "./domain/chat";
 
 const server = new Server({ port: config.port });
 
@@ -35,28 +36,33 @@ server.on("connection", async (socket) => {
     const speech2textSession = await sessionFactory.create();
     const audio = await Audio2Rtp.Create();
     const gptSession = new GptSession();
+    const chat = new ChatLog();
 
-    const pc = new RTCPeerConnection();
-    const transceiver = pc.addTransceiver("audio", { direction: "sendrecv" });
+    const connection = new CallConnection();
 
-    let chatIndex = 0;
-    let read = "";
+    connection.onMessage.subscribe((s) => {
+      const { type } = JSON.parse(s as string);
+      switch (type) {
+        case "clearHistory":
+          {
+            gptSession.clearHistory();
+          }
+          break;
+      }
+    });
+
     gptSession.onResponse.queuingSubscribe(async ({ message, end }) => {
       const wav = await client.speak(message);
       audio
         .inputWav(wav)
         .then(() => {
-          read += message;
-          dc.send(
-            JSON.stringify({
-              type: "response",
-              payload: { content: read, index: chatIndex },
-            })
-          );
+          connection.send({
+            type: "response",
+            payload: chat.put(message),
+          });
 
           if (end) {
-            read = "";
-            chatIndex++;
+            chat.end(chat.content);
           }
         })
         .catch(() => {});
@@ -66,9 +72,9 @@ server.on("connection", async (socket) => {
       console.log("ai", audio.speaking ? "speaking" : "done");
 
       if (audio.speaking) {
-        dc.send(JSON.stringify({ type: "speaking" }));
+        connection.send({ type: "speaking" });
       } else {
-        dc.send(JSON.stringify({ type: "waiting" }));
+        connection.send({ type: "waiting" });
       }
     });
 
@@ -100,20 +106,15 @@ server.on("connection", async (socket) => {
 
           console.log("me", recognized);
 
-          dc.send(
-            JSON.stringify({
-              type: "recognized",
-              payload: { content: recognized, index: chatIndex },
-            })
-          );
-          chatIndex++;
+          connection.send({
+            type: "recognized",
+            payload: chat.end(recognized),
+          });
 
           gptSession.request(recognized).catch((e) => console.error(e));
-          dc.send(
-            JSON.stringify({
-              type: "thinking",
-            })
-          );
+          connection.send({
+            type: "thinking",
+          });
         }
 
         if (res.partial) {
@@ -130,12 +131,10 @@ server.on("connection", async (socket) => {
           }
 
           console.log("recognizing", recognizing);
-          dc.send(
-            JSON.stringify({
-              type: "recognized",
-              payload: { content: recognizing, index: chatIndex },
-            })
-          );
+          connection.send({
+            type: "recognized",
+            payload: chat.post(recognizing),
+          });
         }
       } catch (error) {
         console.error(error);
@@ -143,50 +142,18 @@ server.on("connection", async (socket) => {
     });
 
     audio.onRtp.subscribe((rtp) => {
-      transceiver.sender.sendRtp(rtp);
+      connection.sendRtp(rtp);
     });
 
-    transceiver.onTrack.subscribe((track) => {
-      track.onReceiveRtp.subscribe((rtp) => {
-        speech2textSession.inputRtp(rtp);
-      });
+    connection.onRtp.subscribe((rtp) => {
+      speech2textSession.inputRtp(rtp);
     });
 
-    const dc = pc.createDataChannel("messaging");
-    dc.message.subscribe((s) => {
-      const { type } = JSON.parse(s as string);
-      switch (type) {
-        case "clearHistory":
-          {
-            gptSession.clearHisotry();
-          }
-          break;
-      }
+    socket.on("message", async (data: any) => {
+      await connection.answer(JSON.parse(data));
     });
-
-    await pc.setLocalDescription(await pc.createOffer());
-    const sdp = JSON.stringify(pc.localDescription);
-    socket.send(sdp);
-
-    socket.on("message", (data: any) => {
-      pc.setRemoteDescription(JSON.parse(data)).catch((e) => e);
-    });
+    socket.send(await connection.offer());
   } catch (error) {
     console.error("socket", error);
   }
 });
-
-interface MessageBase {
-  type: string;
-  payload: string;
-}
-
-interface RecognizedMessage extends MessageBase {
-  type: "recognized";
-}
-
-interface ResponseMessage extends MessageBase {
-  type: "response";
-}
-
-type Message = RecognizedMessage | ResponseMessage;

@@ -62,7 +62,7 @@ export class GptSession {
     }
   }
 
-  clearHisotry() {
+  clearHistory() {
     this.conversationHistory = [];
   }
 }
