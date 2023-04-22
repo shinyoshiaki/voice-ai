@@ -65,7 +65,7 @@ const App: FC = () => {
           {connectionState === "connecting" && <Spinner />}
         </HStack>
       </Box>
-      <Box p={2} overflowY="auto" ref={contentRef} h="calc(100vh - 210px)">
+      <Box p={2} overflowY="auto" ref={contentRef} h="calc(100vh - 230px)">
         <ChatLogs />
       </Box>
       <Box

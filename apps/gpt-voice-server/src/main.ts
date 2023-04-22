@@ -1,5 +1,4 @@
 import { Server } from "ws";
-import { SessionFactory } from "../../../libs/rtp2text/src";
 
 import { config } from "./config";
 import { VoicevoxClient } from "../../../libs/voicevox-client/src";
@@ -7,19 +6,13 @@ import { Audio2Rtp } from "../../../libs/audio2rtp/src";
 import { GptSession } from "./domain/gpt";
 import { CallConnection } from "./domain/connection";
 import { ChatLog } from "./domain/chat";
+import { Recognize } from "./domain/recognize";
 
 const server = new Server({ port: config.port });
 
 const client = new VoicevoxClient();
 
-console.log("start");
-
 console.log({ config });
-const ngWords = ["えーっと", "えー", "えーと"];
-
-const sessionFactory = new SessionFactory({
-  modelPath: config.modelPath,
-});
 
 server.on("close", () => {
   console.log("server closed");
@@ -33,10 +26,10 @@ server.on("connection", async (socket) => {
   try {
     console.log("new session");
 
-    const speech2textSession = await sessionFactory.create();
     const audio = await Audio2Rtp.Create();
     const gptSession = new GptSession();
     const chat = new ChatLog();
+    const recognize = await Recognize.Create();
 
     const connection = new CallConnection();
 
@@ -72,81 +65,39 @@ server.on("connection", async (socket) => {
       console.log("ai", audio.speaking ? "speaking" : "done");
 
       if (audio.speaking) {
+        recognize.muted = true;
         connection.send({ type: "speaking" });
       } else {
+        recognize.muted = false;
         connection.send({ type: "waiting" });
       }
     });
 
-    speech2textSession.onText.subscribe(async (res) => {
-      try {
-        if (audio.speaking) {
-          return;
-        }
+    recognize.onRecognized.subscribe((recognized) => {
+      connection.send({
+        type: "recognized",
+        payload: chat.end(recognized),
+      });
 
-        if (res.result) {
-          let recognized = res.result;
+      gptSession.request(recognized).catch((e) => console.error(e));
+      connection.send({
+        type: "thinking",
+      });
+    });
 
-          if (recognized.length === 1) {
-            return;
-          }
-          if (ngWords.includes(recognized)) {
-            return;
-          }
-          if (recognized[0] === "ん") {
-            recognized = recognized.slice(1);
-          }
-
-          for (const ng of ngWords) {
-            if (recognized.startsWith(ng)) {
-              recognized = recognized.slice(ng.length);
-              break;
-            }
-          }
-
-          console.log("me", recognized);
-
-          connection.send({
-            type: "recognized",
-            payload: chat.end(recognized),
-          });
-
-          gptSession.request(recognized).catch((e) => console.error(e));
-          connection.send({
-            type: "thinking",
-          });
-        }
-
-        if (res.partial) {
-          if (audio.speaking) {
-            return;
-          }
-
-          const recognizing = res.partial;
-          if (recognizing.length === 1) {
-            return;
-          }
-          if (ngWords.includes(recognizing)) {
-            return;
-          }
-
-          console.log("recognizing", recognizing);
-          connection.send({
-            type: "recognized",
-            payload: chat.post(recognizing),
-          });
-        }
-      } catch (error) {
-        console.error(error);
-      }
+    recognize.onRecognizing.subscribe((recognizing) => {
+      connection.send({
+        type: "recognized",
+        payload: chat.post(recognizing),
+      });
     });
 
     audio.onRtp.subscribe((rtp) => {
       connection.sendRtp(rtp);
     });
 
-    connection.onRtp.subscribe((rtp) => {
-      speech2textSession.inputRtp(rtp);
+    connection.onRtp.subscribe(async (rtp) => {
+      await recognize.inputRtp(rtp);
     });
 
     socket.on("message", async (data: any) => {

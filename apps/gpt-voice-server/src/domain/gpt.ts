@@ -14,7 +14,7 @@ export class GptSession {
   conversationHistory: ChatCompletionRequestMessage[] = [];
   onResponse = new Event<[{ message: string; end?: boolean }]>();
   private messageBuffer: string[] = [];
-  private marks = ["、", "。"];
+  private marks = ["、", "。", "・"];
 
   private get systemConversation(): ChatCompletionRequestMessage[] {
     return [];
