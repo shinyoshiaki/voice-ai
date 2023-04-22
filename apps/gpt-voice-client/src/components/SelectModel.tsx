@@ -2,7 +2,8 @@ import { Box, Button, Center } from "@chakra-ui/react";
 import { FC } from "react";
 import { BsTelephone } from "react-icons/bs";
 import { useRecoilValue } from "recoil";
-import { callConnection, connectionStateAtom } from "../domain/call";
+import { callConnection } from "../domain/call";
+import { connectionStateAtom } from "../state";
 
 export const SelectModel: FC = () => {
   const connectionState = useRecoilValue(connectionStateAtom);

@@ -1,7 +1,5 @@
 import Event from "rx.mini";
 import { env } from "../../../../env";
-import { atom } from "recoil";
-import { v4 } from "uuid";
 
 const endpoint = env.endpoint;
 
@@ -64,8 +62,3 @@ class CallConnection {
 }
 
 export const callConnection = new CallConnection();
-
-export const connectionStateAtom = atom<RTCPeerConnectionState>({
-  key: v4(),
-  default: "new",
-});

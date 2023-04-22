@@ -7,34 +7,20 @@ import {
   Spinner,
   Box,
   HStack,
+  Spacer,
 } from "@chakra-ui/react";
 import { Controller } from "./components/Controller";
 import { SelectModel } from "./components/SelectModel";
-import { callConnection, connectionStateAtom } from "./domain/call";
-import { RecoilRoot, useRecoilState } from "recoil";
-
-const initialState: {
-  recognized: string;
-  response: string;
-  muted: boolean;
-  aiState: "thinking" | "waiting" | "speaking";
-} = {
-  recognized: "　",
-  response: "　",
-  muted: false,
-  aiState: "waiting",
-};
+import { callConnection } from "./domain/call";
+import { RecoilRoot, useRecoilState, useRecoilValue } from "recoil";
+import { ChatLogs } from "./components/ChatLog";
+import { chatLogsAtom, connectionStateAtom } from "./state";
 
 const App: FC = () => {
-  const [state, updateState] = useReducer(
-    (prev: typeof initialState, next: Partial<typeof initialState>) => ({
-      ...prev,
-      ...next,
-    }),
-    initialState
-  );
+  const contentRef = useRef<HTMLDivElement>();
   const [connectionState, setConnectionState] =
     useRecoilState(connectionStateAtom);
+  const chatLogs = useRecoilValue(chatLogsAtom);
 
   useEffect(() => {
     callConnection.onConnectionstateChange.subscribe((connectionState) => {
@@ -59,39 +45,17 @@ const App: FC = () => {
           break;
       }
     });
-    callConnection.onMessage.subscribe(({ type, payload }) => {
-      switch (type) {
-        case "recognized":
-          {
-            updateState({ recognized: payload });
-          }
-          break;
-        case "response":
-          {
-            updateState({ response: payload });
-          }
-          break;
-        case "thinking":
-          {
-            updateState({ aiState: "thinking" });
-          }
-          break;
-        case "speaking":
-          {
-            updateState({ aiState: "speaking" });
-          }
-          break;
-        case "waiting":
-          {
-            updateState({ aiState: "waiting" });
-          }
-          break;
-      }
-    });
   }, []);
 
+  useEffect(() => {
+    if (contentRef.current) {
+      console.log("scroll", contentRef.current.scrollHeight);
+      contentRef.current.scrollTop = contentRef.current.scrollHeight;
+    }
+  }, [chatLogs]);
+
   return (
-    <div>
+    <Box>
       <Box p={5}>
         <SelectModel />
       </Box>
@@ -101,34 +65,8 @@ const App: FC = () => {
           {connectionState === "connecting" && <Spinner />}
         </HStack>
       </Box>
-      <Box>
-        <Box>
-          <Text>自分</Text>
-          <Box p={1}>
-            {connectionState === "connected" && state.aiState === "waiting" && (
-              <Text>認識中</Text>
-            )}
-            <Text>{state.recognized}</Text>
-          </Box>
-        </Box>
-        <Box>
-          <Text>AI</Text>
-          <Box>
-            {state.aiState === "waiting" && <Text>待機中</Text>}
-            {state.aiState === "speaking" && <Text>発声中</Text>}
-            {state.aiState === "thinking" && <Text>思考中</Text>}
-            <Text>{state.response}</Text>
-          </Box>
-          <Box p={1}>
-            <Button
-              onClick={() => {
-                callConnection.sendMessage("clearHistory");
-              }}
-            >
-              記憶を消す
-            </Button>
-          </Box>
-        </Box>
+      <Box p={2} overflowY="auto" ref={contentRef} h="calc(100vh - 210px)">
+        <ChatLogs />
       </Box>
       <Box
         p={2}
@@ -140,7 +78,7 @@ const App: FC = () => {
       >
         <Controller />
       </Box>
-    </div>
+    </Box>
   );
 };
 

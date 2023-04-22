@@ -32,13 +32,14 @@ server.on("connection", async (socket) => {
   try {
     console.log("new session");
 
-    const textSession = await sessionFactory.create();
+    const speech2textSession = await sessionFactory.create();
     const audio = await Audio2Rtp.Create();
     const gptSession = new GptSession();
 
     const pc = new RTCPeerConnection();
     const transceiver = pc.addTransceiver("audio", { direction: "sendrecv" });
 
+    let chatIndex = 0;
     let read = "";
     gptSession.onResponse.queuingSubscribe(async ({ message, end }) => {
       const wav = await client.speak(message);
@@ -49,12 +50,13 @@ server.on("connection", async (socket) => {
           dc.send(
             JSON.stringify({
               type: "response",
-              payload: read,
-            } as ResponseMessage)
+              payload: { content: read, index: chatIndex },
+            })
           );
 
           if (end) {
             read = "";
+            chatIndex++;
           }
         })
         .catch(() => {});
@@ -70,7 +72,7 @@ server.on("connection", async (socket) => {
       }
     });
 
-    textSession.onText.subscribe(async (res) => {
+    speech2textSession.onText.subscribe(async (res) => {
       try {
         if (audio.speaking) {
           return;
@@ -101,11 +103,17 @@ server.on("connection", async (socket) => {
           dc.send(
             JSON.stringify({
               type: "recognized",
-              payload: recognized,
-            } as RecognizedMessage)
+              payload: { content: recognized, index: chatIndex },
+            })
           );
+          chatIndex++;
 
-          await gptSession.request(recognized);
+          gptSession.request(recognized).catch((e) => console.error(e));
+          dc.send(
+            JSON.stringify({
+              type: "thinking",
+            })
+          );
         }
 
         if (res.partial) {
@@ -113,21 +121,20 @@ server.on("connection", async (socket) => {
             return;
           }
 
-          const recognized = res.partial;
-          if (recognized.length === 1) {
+          const recognizing = res.partial;
+          if (recognizing.length === 1) {
             return;
           }
-          if (ngWords.includes(recognized)) {
+          if (ngWords.includes(recognizing)) {
             return;
           }
 
-          console.log("recognizing", recognized);
-
+          console.log("recognizing", recognizing);
           dc.send(
             JSON.stringify({
               type: "recognized",
-              payload: recognized,
-            } as RecognizedMessage)
+              payload: { content: recognizing, index: chatIndex },
+            })
           );
         }
       } catch (error) {
@@ -141,7 +148,7 @@ server.on("connection", async (socket) => {
 
     transceiver.onTrack.subscribe((track) => {
       track.onReceiveRtp.subscribe((rtp) => {
-        textSession.inputRtp(rtp);
+        speech2textSession.inputRtp(rtp);
       });
     });
 
