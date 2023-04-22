@@ -12,7 +12,6 @@ WORKDIR /local
 COPY ./apps/gpt-voice-server /local/apps/gpt-voice-server
 COPY ./libs /local/libs
 COPY package*.json /local/
-COPY env.*ts /local/
 COPY cred.*ts /local/
 COPY vosk-model /local/vosk-model
 

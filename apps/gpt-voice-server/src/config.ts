@@ -1,4 +1,4 @@
-import { env } from "../../../env";
+import { env } from "../env";
 import { credentials } from "../../../cred";
 
 export const config = {

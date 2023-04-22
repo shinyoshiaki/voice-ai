@@ -15,5 +15,5 @@ vosk-model*
 *.7z*
 linux-cpu
 *.wav
-/env.ts
+env.ts
 /cred.ts

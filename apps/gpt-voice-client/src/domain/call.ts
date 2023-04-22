@@ -1,5 +1,5 @@
 import Event from "rx.mini";
-import { env } from "../../../../env";
+import { env } from "../../env";
 
 const endpoint = env.endpoint;
 

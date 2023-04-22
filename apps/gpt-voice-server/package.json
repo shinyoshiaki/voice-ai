@@ -6,7 +6,8 @@
   "author": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev src/main.ts"
+    "dev": "ts-node-dev src/main.ts",
+    "type": "tsc --noEmit"
   },
   "dependencies": {
     "date-fns": "^2.29.3",
