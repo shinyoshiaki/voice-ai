@@ -26,13 +26,9 @@ server.on("connection", async (socket) => {
   try {
     console.log("new session");
 
-    const audio = await Audio2Rtp.Create();
-    const gptSession = new GptSession();
     const chat = new ChatLog();
-    const recognize = await Recognize.Create();
 
     const connection = new CallConnection();
-
     connection.onMessage.subscribe((s) => {
       const { type } = JSON.parse(s as string);
       switch (type) {
@@ -43,7 +39,27 @@ server.on("connection", async (socket) => {
           break;
       }
     });
+    connection.onRtp.subscribe(async (rtp) => {
+      await recognize.inputRtp(rtp);
+    });
 
+    const audio = await Audio2Rtp.Create();
+    audio.onSpeakChanged.subscribe(() => {
+      console.log("ai", audio.speaking ? "speaking" : "done");
+
+      if (audio.speaking) {
+        recognize.muted = true;
+        connection.send({ type: "speaking" });
+      } else {
+        recognize.muted = false;
+        connection.send({ type: "waiting" });
+      }
+    });
+    audio.onRtp.subscribe((rtp) => {
+      connection.sendRtp(rtp);
+    });
+
+    const gptSession = new GptSession();
     gptSession.onResponse.queuingSubscribe(async ({ message, end }) => {
       const wav = await client.speak(message);
       audio
@@ -61,18 +77,7 @@ server.on("connection", async (socket) => {
         .catch(() => {});
     });
 
-    audio.onSpeakChanged.subscribe(() => {
-      console.log("ai", audio.speaking ? "speaking" : "done");
-
-      if (audio.speaking) {
-        recognize.muted = true;
-        connection.send({ type: "speaking" });
-      } else {
-        recognize.muted = false;
-        connection.send({ type: "waiting" });
-      }
-    });
-
+    const recognize = await Recognize.Create();
     recognize.onRecognized.subscribe((recognized) => {
       connection.send({
         type: "recognized",
@@ -84,20 +89,11 @@ server.on("connection", async (socket) => {
         type: "thinking",
       });
     });
-
     recognize.onRecognizing.subscribe((recognizing) => {
       connection.send({
         type: "recognized",
         payload: chat.post(recognizing),
       });
-    });
-
-    audio.onRtp.subscribe((rtp) => {
-      connection.sendRtp(rtp);
-    });
-
-    connection.onRtp.subscribe(async (rtp) => {
-      await recognize.inputRtp(rtp);
     });
 
     socket.on("message", async (data: any) => {
