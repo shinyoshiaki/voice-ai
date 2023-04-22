@@ -17,14 +17,7 @@ export class GptSession {
   private marks = ["、", "。"];
 
   private get systemConversation(): ChatCompletionRequestMessage[] {
-    return [
-      {
-        role: "user",
-        content: `現在時刻は ${format(Date.now(), "HH時mm分", {
-          locale: ja,
-        })} です。時刻を聞かれたらそう答えてください`,
-      },
-    ];
+    return [];
   }
 
   private response(message: string, end = false) {
