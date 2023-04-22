@@ -15,3 +15,8 @@ export interface ChatLog {
   content: string;
   index: number;
 }
+
+export const aiStateAtom = atom<"speaking" | "waiting">({
+  key: v4(),
+  default: "waiting",
+});

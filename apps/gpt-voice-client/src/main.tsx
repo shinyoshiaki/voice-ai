@@ -1,14 +1,6 @@
-import { FC, useEffect, useReducer, useRef } from "react";
+import { FC, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
-import {
-  ChakraProvider,
-  Button,
-  Text,
-  Spinner,
-  Box,
-  HStack,
-  Spacer,
-} from "@chakra-ui/react";
+import { ChakraProvider, Text, Spinner, Box, HStack } from "@chakra-ui/react";
 import { Controller } from "./components/Controller";
 import { SelectModel } from "./components/SelectModel";
 import { callConnection } from "./domain/call";

@@ -14,15 +14,32 @@ import { FC, useEffect, useRef, useState } from "react";
 import { BsMic, BsMicMute, BsSquare } from "react-icons/bs";
 import { RxSpeakerLoud, RxSpeakerOff } from "react-icons/rx";
 import { callConnection } from "../domain/call";
+import { aiStateAtom } from "../state";
+import { useRecoilState } from "recoil";
 
 export const Controller: FC<{}> = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [muted, setMuted] = useState(false);
   const [speaker, setSpeaker] = useState(true);
+  const [aiState, setAiState] = useRecoilState(aiStateAtom);
 
   useEffect(() => {
     callConnection.onAudioStream.subscribe((stream) => {
       audioRef.current.srcObject = stream;
+    });
+    callConnection.onMessage.subscribe(({ type }) => {
+      switch (type) {
+        case "speaking":
+          {
+            setAiState("speaking");
+          }
+          break;
+        case "waiting":
+          {
+            setAiState("waiting");
+          }
+          break;
+      }
     });
   }, []);
 
@@ -53,9 +70,11 @@ export const Controller: FC<{}> = () => {
   return (
     <Box>
       <Center p={2}>
-        <Button onClick={stop} leftIcon={<BsSquare />}>
-          stop
-        </Button>
+        {aiState !== "waiting" && (
+          <Button onClick={stop} leftIcon={<BsSquare />}>
+            stop
+          </Button>
+        )}
       </Center>
       <HStack>
         <IconButton
