@@ -14,7 +14,7 @@
     "#add-package": "npm init -w apps/a",
     "build": "cd apps/gpt-voice-client && npm run build",
     "client": "cd apps/gpt-voice-client && npm run dev",
-    "compose": "docker-compose up -d --build",
+    "compose": "docker compose up -d --build",
     "docker-build:server": "docker build -t gpt-voice-server -f ./docker/gpt-voice-server/Dockerfile .",
     "docker-run:server": "docker run -p 8080:8080 gpt-voice-server",
     "server": "cd apps/gpt-voice-server && npm run dev",
