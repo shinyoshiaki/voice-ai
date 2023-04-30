@@ -6,7 +6,7 @@ import { RtpPacket } from "werift";
 const sessionFactory = new SessionFactory({
   modelPath: config.modelPath,
 });
-const ngWords = ["えーっと", "えっとー", "えーと", "えー"]
+const ngWords = ["えーっと", "えっとー", "えーと", "えっと", "えー", "ん"]
   .sort((a, b) => a.length - b.length)
   .reverse();
 
@@ -32,9 +32,6 @@ export class RecognizeVoice {
         }
         if (ngWords.includes(recognized)) {
           return;
-        }
-        if (recognized[0] === "ん") {
-          recognized = recognized.slice(1);
         }
 
         for (const ng of ngWords) {
