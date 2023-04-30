@@ -1,16 +1,14 @@
 import { Server } from "ws";
 
 import { config } from "./config";
-import { VoicevoxClient } from "../../../libs/voicevox-client/src";
 import { Audio2Rtp } from "../../../libs/audio2rtp/src";
 import { GptSession } from "./domain/gpt";
 import { CallConnection } from "./domain/connection";
 import { ChatLog } from "./domain/chat";
-import { Recognize } from "./domain/recognize";
+import { RecognizeVoice } from "./domain/recognize";
+import { TtsClient } from "./domain/tts";
 
 const server = new Server({ port: config.port });
-
-const client = new VoicevoxClient();
 
 console.log({ config });
 
@@ -26,7 +24,7 @@ server.on("connection", async (socket) => {
   try {
     console.log("new session");
 
-    const chat = new ChatLog();
+    const chatLog = new ChatLog();
 
     const connection = new CallConnection();
     connection.onMessage.subscribe(async (s) => {
@@ -41,13 +39,13 @@ server.on("connection", async (socket) => {
           {
             gptSession.stop();
             await audio.stop();
-            chat.end(chat.content);
+            chatLog.end(chatLog.content);
           }
           break;
       }
     });
     connection.onRtp.subscribe(async (rtp) => {
-      await recognize.inputRtp(rtp);
+      await recognizeVoice.inputRtp(rtp);
     });
 
     const audio = await Audio2Rtp.Create();
@@ -55,10 +53,10 @@ server.on("connection", async (socket) => {
       console.log("ai", audio.speaking ? "speaking" : "done");
 
       if (audio.speaking) {
-        recognize.muted = true;
+        recognizeVoice.muted = true;
         connection.send({ type: "speaking" });
       } else {
-        recognize.muted = false;
+        recognizeVoice.muted = false;
         connection.send({ type: "waiting" });
       }
     });
@@ -66,42 +64,45 @@ server.on("connection", async (socket) => {
       connection.sendRtp(rtp);
     });
 
+    const tts = new TtsClient(audio);
+
     const gptSession = new GptSession();
     gptSession.onResponse.queuingSubscribe(async ({ message, end }) => {
-      const wav = await client.speak(message);
-      audio
-        .inputWav(wav)
+      tts
+        .speak(message)
         .then(() => {
           if (!gptSession.stopped) {
             connection.send({
               type: "response",
-              payload: chat.put(message),
+              payload: chatLog.put(message),
             });
 
             if (end) {
-              chat.end(chat.content);
+              chatLog.end(chatLog.content);
             }
           }
         })
         .catch(() => {});
     });
 
-    const recognize = await Recognize.Create();
-    recognize.onRecognized.subscribe((recognized) => {
+    const recognizeVoice = await RecognizeVoice.Create();
+    recognizeVoice.onRecognized.subscribe((recognized) => {
       connection.send({
         type: "recognized",
-        payload: chat.end(recognized),
+        payload: chatLog.end(recognized),
       });
 
       gptSession.request(recognized).catch((e) => console.error(e));
+
+      recognizeVoice.muted = true;
       connection.send({
         type: "thinking",
       });
     });
-    recognize.onRecognizing.subscribe((recognizing) => {
+    recognizeVoice.onRecognizing.subscribe((recognizing) => {
       connection.send({
         type: "recognized",
-        payload: chat.post(recognizing),
+        payload: chatLog.post(recognizing),
       });
     });
 

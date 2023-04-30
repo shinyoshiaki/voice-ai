@@ -41,7 +41,6 @@ const App: FC = () => {
 
   useEffect(() => {
     if (contentRef.current) {
-      console.log("scroll", contentRef.current.scrollHeight);
       contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
   }, [chatLogs]);

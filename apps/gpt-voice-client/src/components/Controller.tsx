@@ -13,15 +13,17 @@ import {
 import { FC, useEffect, useRef, useState } from "react";
 import { BsMic, BsMicMute, BsSquare } from "react-icons/bs";
 import { RxSpeakerLoud, RxSpeakerOff } from "react-icons/rx";
+import { AiOutlineClear } from "react-icons/ai";
 import { callConnection } from "../domain/call";
-import { aiStateAtom } from "../state";
-import { useRecoilState } from "recoil";
+import { aiStateAtom, chatLogsAtom } from "../state";
+import { useRecoilState, useSetRecoilState } from "recoil";
 
 export const Controller: FC<{}> = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [muted, setMuted] = useState(false);
   const [speaker, setSpeaker] = useState(true);
   const [aiState, setAiState] = useRecoilState(aiStateAtom);
+  const setChatLogs = useSetRecoilState(chatLogsAtom);
 
   useEffect(() => {
     callConnection.onAudioStream.subscribe((stream) => {
@@ -67,6 +69,11 @@ export const Controller: FC<{}> = () => {
     callConnection.sendMessage("stop");
   };
 
+  const clearHistory = () => {
+    setChatLogs({});
+    callConnection.sendMessage("clearHistory");
+  };
+
   return (
     <Box>
       <Center p={2}>
@@ -76,17 +83,22 @@ export const Controller: FC<{}> = () => {
           </Button>
         )}
       </Center>
+      <audio autoPlay ref={audioRef} />
       <HStack>
         <IconButton
           icon={<Icon as={muted ? BsMicMute : BsMic} />}
-          aria-label="mute-unmute"
+          aria-label="mic-mute-unmute"
           onClick={switchMute}
         />
-        <audio autoPlay ref={audioRef} />
         <IconButton
           icon={<Icon as={speaker ? RxSpeakerLoud : RxSpeakerOff} />}
-          aria-label="mute-unmute"
+          aria-label="speaker-mute-unmute"
           onClick={switchSpeaker}
+        />
+        <IconButton
+          icon={<Icon as={AiOutlineClear} />}
+          aria-label="clear"
+          onClick={clearHistory}
         />
         <InputGroup>
           <Input placeholder="Send a message..." />

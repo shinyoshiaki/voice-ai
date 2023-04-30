@@ -6,9 +6,11 @@ import { RtpPacket } from "werift";
 const sessionFactory = new SessionFactory({
   modelPath: config.modelPath,
 });
-const ngWords = ["えーっと", "えー", "えーと", "えっとー"];
+const ngWords = ["えーっと", "えっとー", "えーと", "えー"]
+  .sort((a, b) => a.length - b.length)
+  .reverse();
 
-export class Recognize {
+export class RecognizeVoice {
   session!: Session;
   onRecognized = new Event<[string]>();
   onRecognizing = new Event<[string]>();
@@ -60,7 +62,7 @@ export class Recognize {
   }
 
   static async Create() {
-    const recognize = new Recognize();
+    const recognize = new RecognizeVoice();
     await recognize.init();
     return recognize;
   }
