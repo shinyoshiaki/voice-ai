@@ -5,6 +5,7 @@ const voicevox = new VoicevoxClient();
 
 export class TtsClient {
   emotion = { neutral: 23, happy: 24, angry: 26, sad: 25, relaxed: 24 };
+  latestSpeaker = this.emotion.neutral;
 
   constructor(private audio2Rtp: Audio2Rtp) {}
 
@@ -19,11 +20,16 @@ export class TtsClient {
   }
 
   async speak(sentence: string) {
-    const emotion = this.getEmotionTags(sentence);
+    const emotionTag = this.getEmotionTags(sentence);
+    const speaker = this.emotion[emotionTag];
+    if (speaker) {
+      this.latestSpeaker = speaker;
+    }
+
     sentence = this.removeEmotionTags(sentence);
 
     const wav = await voicevox.speak(sentence, {
-      speaker: this.emotion[emotion] ?? this.emotion.neutral,
+      speaker: speaker ?? this.latestSpeaker,
     });
     await this.audio2Rtp.inputWav(wav);
   }
