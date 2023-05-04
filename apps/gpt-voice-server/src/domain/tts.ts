@@ -4,7 +4,7 @@ import { VoicevoxClient } from "../../../../libs/voicevox-client/src";
 const voicevox = new VoicevoxClient();
 
 export class TtsClient {
-  emotion = { neutral: 23, happy: 24, angry: 26, sad: 25, relaxed: 24 };
+  emotion = { neutral: 23, happy: 24, angry: 26, sad: 25, relaxed: 23 };
   latestSpeaker = this.emotion.neutral;
 
   constructor(private audio2Rtp: Audio2Rtp) {}
