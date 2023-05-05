@@ -73,8 +73,22 @@ export const ChatLogs: FC = () => {
               const latest = Object.values(prev)
                 .sort((a, b) => a.index - b.index)
                 .at(-1);
-              const { [latest.index]: _, ...next } = prev;
-              return next;
+              prev =
+                latest.content === thinkingWord
+                  ? (() => {
+                      const { [latest.index]: _, ...next } = prev;
+                      return next;
+                    })()
+                  : prev;
+
+              return {
+                ...prev,
+                [latest.index + 1]: {
+                  role: "assistant",
+                  content: "待機中",
+                  index: latest.index + 1,
+                },
+              };
             });
           }
           break;

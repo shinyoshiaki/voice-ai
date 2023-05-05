@@ -78,15 +78,15 @@ export class AssistantUsecase {
       .speak(message)
       .then(() => {
         if (!this.gptSession.stopped) {
-          const rpc: Response = {
+          this.connection.send<Response>({
             type: "response",
             payload: this.chatLog.input({ message, role: "assistant" }),
-          };
-          this.connection.send(rpc);
+          });
 
           if (end) {
             this.chatLog.input({ message, role: "assistant" });
             this.chatLog.endInput();
+            this.connection.send<Waiting>({ type: "waiting" });
           }
         }
       })
