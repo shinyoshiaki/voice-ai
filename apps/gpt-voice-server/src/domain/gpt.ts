@@ -2,12 +2,38 @@ import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import { config } from "../config";
 import { IncomingMessage } from "http";
 import { Event } from "rx.mini";
+import { format } from "date-fns";
+import { ja } from "date-fns/locale";
+import axios from "axios";
 
 const conf = new Configuration({
   apiKey: config.openai,
 });
 
-const SYSTEM_PROMPT = `あなたはこれからuserと仲の良い1人の人間として振舞い会話を行います。
+const cityName = "Tokyo";
+
+async function getWeather() {
+  try {
+    const response = await axios.get(
+      `https://wttr.in/${cityName}?format=%C+%t`,
+      { responseType: "text" }
+    );
+    const weather = response.data;
+    return `今日の天気は ${weather} です`;
+  } catch (error) {
+    console.error("天気情報の取得に失敗しました。", error);
+  }
+  return "わかりません";
+}
+
+function getTime() {
+  return format(Date.now(), "HH時mm分", {
+    locale: ja,
+  });
+}
+
+const SYSTEM_PROMPT =
+  async () => `あなたはこれからuserと仲の良い1人の人間として振舞い会話を行います。
 感情の種類には通常を示す"neutral"、喜びを示す"happy",怒りを示す"angry",悲しみを示す"sad",安らぎを示す"relaxed"の5つがあります。
 
 会話文の書式は以下の通りです。
@@ -24,6 +50,11 @@ const SYSTEM_PROMPT = `あなたはこれからuserと仲の良い1人の人間�
 
 返答には最も適切な会話文を一つだけ返答してください。
 ですます調や敬語は使わないでください。
+
+時刻を聞かれたら「${getTime()}」と答えてください。
+
+天気を聞かれたら「${await getWeather()}」を自然な日本語で答えてください。
+
 それでは会話を始めましょう。`;
 
 export class GptSession {
@@ -35,11 +66,11 @@ export class GptSession {
   private marks = ["、", "。", "・", "！", "?", "？", "：", ". "];
   stopped = false;
 
-  private get systemConversation(): ChatCompletionRequestMessage[] {
+  private async systemConversation(): Promise<ChatCompletionRequestMessage[]> {
     return [
       {
         role: "system",
-        content: SYSTEM_PROMPT,
+        content: await SYSTEM_PROMPT(),
       },
     ];
   }
@@ -53,6 +84,9 @@ export class GptSession {
       this.messageBuffer = [];
 
       if (end) {
+        if (!this.sentenceBuffer) {
+          return;
+        }
         this.conversationHistory.push({
           role: "assistant",
           content: this.sentenceBuffer,
@@ -72,7 +106,10 @@ export class GptSession {
     this.stopped = false;
     this.conversationHistory.push({ role: "user", content: message });
 
-    const messages = [...this.systemConversation, ...this.conversationHistory];
+    const messages = [
+      ...(await this.systemConversation()),
+      ...this.conversationHistory,
+    ];
 
     const completion = await this.openai.createChatCompletion(
       {
