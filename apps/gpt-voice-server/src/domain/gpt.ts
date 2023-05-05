@@ -76,7 +76,7 @@ export class GptSession {
 
     const completion = await this.openai.createChatCompletion(
       {
-        model: "gpt-3.5-turbo",
+        model: config.gptModel,
         messages,
         stream: true,
       },
