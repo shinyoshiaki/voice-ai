@@ -32,7 +32,7 @@ export class GptSession {
   onResponse = new Event<[{ message: string; end?: boolean }]>();
   private messageBuffer: string[] = [];
   sentenceBuffer = "";
-  private marks = ["、", "。", "・"];
+  private marks = ["、", "。", "・", "！", "?", "？", "：", ". "];
   stopped = false;
 
   private get systemConversation(): ChatCompletionRequestMessage[] {
