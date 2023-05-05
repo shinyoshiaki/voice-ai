@@ -6,7 +6,14 @@ import { RtpPacket } from "werift";
 const sessionFactory = new SessionFactory({
   modelPath: config.modelPath,
 });
-const ngWords = ["えーっと", "えっとー", "えーと", "えっと", "えー", "ん"]
+const ngWordsStartWith = [
+  "えーっと",
+  "えっとー",
+  "えーと",
+  "えっと",
+  "えー",
+  "ん",
+]
   .sort((a, b) => a.length - b.length)
   .reverse();
 
@@ -29,11 +36,11 @@ export class RecognizeVoice {
         if (recognized.length === 1) {
           return;
         }
-        if (ngWords.includes(recognized)) {
+        if (ngWordsStartWith.includes(recognized)) {
           return;
         }
 
-        for (const ng of ngWords) {
+        for (const ng of ngWordsStartWith) {
           if (recognized.startsWith(ng)) {
             recognized = recognized.slice(ng.length);
             break;
@@ -48,7 +55,7 @@ export class RecognizeVoice {
         if (recognizing.length === 1) {
           return;
         }
-        if (ngWords.includes(recognizing)) {
+        if (ngWordsStartWith.includes(recognizing)) {
           return;
         }
 
