@@ -31,7 +31,8 @@ export class CallConnection {
     await this.transceiver.sender.sendRtp(rtp);
   }
 
-  send(message: object) {
+  send<T = object>(message: T) {
+    console.log({ message });
     this.dc.send(JSON.stringify(message));
   }
 }

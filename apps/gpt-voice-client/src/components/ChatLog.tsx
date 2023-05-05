@@ -4,13 +4,21 @@ import { FC, useEffect } from "react";
 import { ChatLog, chatLogsAtom } from "../state";
 import { callConnection } from "../domain/call";
 import { useRecoilState } from "recoil";
+import {
+  AssistantFunctions,
+  ChatFunctions,
+  UserFunctions,
+} from "@shinyoshiaki/gpt-voice-rpc";
 
 export const ChatLogs: FC = () => {
   const [chatLogs, setChatLogs] = useRecoilState(chatLogsAtom);
 
   useEffect(() => {
-    callConnection.onMessage.subscribe(({ type, payload }) => {
-      console.log({ type, payload });
+    callConnection.onMessage.subscribe((event) => {
+      const { type, payload } = event as
+        | AssistantFunctions
+        | ChatFunctions
+        | UserFunctions;
       switch (type) {
         case "recognized":
           {

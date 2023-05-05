@@ -17,6 +17,7 @@ import { AiOutlineClear } from "react-icons/ai";
 import { callConnection } from "../domain/call";
 import { aiStateAtom, chatLogsAtom } from "../state";
 import { useRecoilState, useSetRecoilState } from "recoil";
+import { AssistantFunctions } from "@shinyoshiaki/gpt-voice-rpc";
 
 export const Controller: FC<{}> = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -29,7 +30,8 @@ export const Controller: FC<{}> = () => {
     callConnection.onAudioStream.subscribe((stream) => {
       audioRef.current.srcObject = stream;
     });
-    callConnection.onMessage.subscribe(({ type }) => {
+    callConnection.onMessage.subscribe((event) => {
+      const { type } = event as AssistantFunctions;
       switch (type) {
         case "speaking":
           {
