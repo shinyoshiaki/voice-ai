@@ -44,17 +44,19 @@ export class UserUsecase {
   }
 
   recognized(sentence: string) {
-    this.connection.send<Recognized>({
-      type: "recognized",
-      payload: this.chatLog.endInput(sentence),
-    });
+    try {
+      this.connection.send<Recognized>({
+        type: "recognized",
+        payload: this.chatLog.endInput(sentence),
+      });
 
-    this.gptSession.request(sentence).catch((e) => console.error(e));
+      this.gptSession.request(sentence).catch((e) => console.error(e));
 
-    this.recognizeVoice.muted = true;
-    this.connection.send<Thinking>({
-      type: "thinking",
-    });
+      this.recognizeVoice.muted = true;
+      this.connection.send<Thinking>({
+        type: "thinking",
+      });
+    } catch (error) {}
   }
 
   destroy() {

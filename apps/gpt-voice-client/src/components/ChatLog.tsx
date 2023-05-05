@@ -10,8 +10,26 @@ import {
   UserFunctions,
 } from "@shinyoshiaki/gpt-voice-rpc";
 
+const thinkingWord = "思考中";
+
 export const ChatLogs: FC = () => {
   const [chatLogs, setChatLogs] = useRecoilState(chatLogsAtom);
+
+  const addLog = (log: ChatLog, role: "user" | "assistant") => {
+    setChatLogs((prev) => ({
+      ...Object.keys(prev).reduce((acc, cur) => {
+        if (Number(cur) < log.index) {
+          acc[cur] = prev[cur];
+        }
+        return acc;
+      }, {}),
+      [log.index]: {
+        content: log.content,
+        role,
+        index: log.index,
+      },
+    }));
+  };
 
   useEffect(() => {
     callConnection.onMessage.subscribe((event) => {
@@ -19,29 +37,17 @@ export const ChatLogs: FC = () => {
         | AssistantFunctions
         | ChatFunctions
         | UserFunctions;
+
+      console.log({ type, payload });
       switch (type) {
         case "recognized":
           {
-            setChatLogs((prev) => ({
-              ...prev,
-              [payload.index]: {
-                content: payload.content,
-                role: "user",
-                index: payload.index,
-              },
-            }));
+            addLog(payload, "user");
           }
           break;
         case "response":
           {
-            setChatLogs((prev) => ({
-              ...prev,
-              [payload.index]: {
-                content: payload.content,
-                role: "assistant",
-                index: payload.index,
-              },
-            }));
+            addLog(payload, "assistant");
           }
           break;
         case "thinking":
@@ -54,10 +60,21 @@ export const ChatLogs: FC = () => {
                 ...prev,
                 [latest.index + 1]: {
                   role: "assistant",
-                  content: "思考中",
+                  content: thinkingWord,
                   index: latest.index + 1,
                 },
               };
+            });
+          }
+          break;
+        case "waiting":
+          {
+            setChatLogs((prev) => {
+              const latest = Object.values(prev)
+                .sort((a, b) => a.index - b.index)
+                .at(-1);
+              const { [latest.index]: _, ...next } = prev;
+              return next;
             });
           }
           break;
@@ -69,8 +86,8 @@ export const ChatLogs: FC = () => {
     <Box>
       {Object.values(chatLogs)
         .sort((a, b) => a.index - b.index)
-        .map((chatLog, i) => (
-          <ChatLogView log={chatLog} key={i} />
+        .map((chatLog) => (
+          <ChatLogView log={chatLog} key={chatLog.index} />
         ))}
     </Box>
   );

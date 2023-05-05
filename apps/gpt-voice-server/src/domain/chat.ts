@@ -36,8 +36,12 @@ export class ChatLogs {
     }
   }
 
+  /**@throws */
   endInput(completeMessage?: string) {
-    const last = this.logs.at(-1)!;
+    const last = this.logs.at(-1);
+    if (!last) {
+      throw new Error();
+    }
     last.completed = true;
     if (completeMessage) {
       last.content = completeMessage;
