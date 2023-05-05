@@ -56,8 +56,8 @@ class CallConnection {
     await peer.setLocalDescription(answer);
   }
 
-  sendMessage(type: string, payload: any = {}) {
-    this.datachannel.send(JSON.stringify({ type, payload }));
+  sendMessage<T = object>(message: T) {
+    this.datachannel.send(JSON.stringify(message));
   }
 }
 

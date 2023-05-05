@@ -15,7 +15,6 @@ export class RecognizeVoice {
   onRecognized = new Event<[string]>();
   onRecognizing = new Event<[string]>();
   muted = false;
-  private constructor() {}
 
   private async init() {
     this.session = await sessionFactory.create();

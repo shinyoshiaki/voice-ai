@@ -70,6 +70,7 @@ export class AssistantUsecase {
     this.gptSession.stop();
     await this.audio.stop();
     this.chatLog.cancel();
+    this.waiting();
   }
 
   private text2speak(message: string, end?: boolean) {

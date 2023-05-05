@@ -14,7 +14,10 @@ export class CallConnection {
         this.onRtp.execute(rtp);
       });
     });
-    this.dc.message.subscribe((s) => this.onMessage.execute(s as string));
+    this.dc.message.subscribe((message) => {
+      console.log({ message });
+      this.onMessage.execute(message as string);
+    });
   }
 
   async offer() {

@@ -17,7 +17,11 @@ import { AiOutlineClear } from "react-icons/ai";
 import { callConnection } from "../domain/call";
 import { aiStateAtom, chatLogsAtom } from "../state";
 import { useRecoilState, useSetRecoilState } from "recoil";
-import { AssistantFunctions } from "@shinyoshiaki/gpt-voice-rpc";
+import {
+  AssistantFunctions,
+  Cancel,
+  ClearHistory,
+} from "@shinyoshiaki/gpt-voice-rpc";
 
 export const Controller: FC<{}> = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -32,18 +36,7 @@ export const Controller: FC<{}> = () => {
     });
     callConnection.onMessage.subscribe((event) => {
       const { type } = event as AssistantFunctions;
-      switch (type) {
-        case "speaking":
-          {
-            setAiState("speaking");
-          }
-          break;
-        case "waiting":
-          {
-            setAiState("waiting");
-          }
-          break;
-      }
+      setAiState(type);
     });
   }, []);
 
@@ -68,12 +61,12 @@ export const Controller: FC<{}> = () => {
   };
 
   const stop = () => {
-    callConnection.sendMessage("stop");
+    callConnection.sendMessage<Cancel>({ type: "cancel" });
   };
 
   const clearHistory = () => {
     setChatLogs({});
-    callConnection.sendMessage("clearHistory");
+    callConnection.sendMessage<ClearHistory>({ type: "clearHistory" });
   };
 
   return (
