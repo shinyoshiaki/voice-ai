@@ -1,32 +1,32 @@
 import { rpcController } from "../controller/rpc";
 import { CallConnection } from "../domain/connection";
-import { UserSessionRepository } from "../domain/session/sessionRepository";
+import { UserServiceManager } from "./userServiceManager";
 
 export class CallUsecase {
-  constructor(private userSessionRepository: UserSessionRepository) {}
+  constructor(private userServiceManager: UserServiceManager) {}
 
   async call() {
     const connection = new CallConnection();
     const sdp = await connection.offer();
 
-    const session = await this.userSessionRepository.create(connection);
-    const destroy = rpcController(connection, session.assistantUsecase);
+    const service = await this.userServiceManager.create(connection);
+    const destroy = rpcController(service);
 
     connection.onClosed.once(() => {
       destroy();
-      session.destroy();
-      this.userSessionRepository.delete(session.id);
+      service.destroy();
+      this.userServiceManager.delete(service.id);
     });
 
-    return { id: session.id, sdp, models: ["gpt3"] };
+    return { id: service.id, sdp, models: ["gpt3"] };
   }
 
   async answer({ sessionId, answer }: { sessionId: string; answer: object }) {
-    const session = this.userSessionRepository.get(sessionId);
-    if (!session) {
+    const service = this.userServiceManager.get(sessionId);
+    if (!service) {
       throw new Error("session not found");
     }
-    const connection = session.connection;
+    const connection = service.connection;
     await connection.answer(answer as any);
   }
 
@@ -37,11 +37,11 @@ export class CallUsecase {
     sessionId: string;
     ice: object;
   }) {
-    const session = this.userSessionRepository.get(sessionId);
-    if (!session) {
+    const service = this.userServiceManager.get(sessionId);
+    if (!service) {
       throw new Error("session not found");
     }
-    const connection = session.connection;
+    const connection = service.connection;
     await connection.addIceCandidate(ice as any);
   }
 }

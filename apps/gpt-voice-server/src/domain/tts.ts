@@ -1,11 +1,11 @@
-import { Audio2Rtp } from "../../../../../libs/audio2rtp/src";
-import { VoicevoxClient } from "../../../../../libs/voicevox-client/src";
+import { Audio2Rtp } from "../../../../libs/audio2rtp/src";
+import { VoicevoxClient } from "../../../../libs/voicevox-client/src";
 
 const voicevox = new VoicevoxClient();
 
-export class TtsClient {
-  emotion = { neutral: 23, happy: 24, angry: 26, sad: 25, relaxed: 23 };
-  latestSpeaker = this.emotion.neutral;
+export class TtsSession {
+  private emotion = { neutral: 23, happy: 24, angry: 26, sad: 25, relaxed: 23 };
+  private latestSpeaker = this.emotion.neutral;
 
   constructor(private audio2Rtp: Audio2Rtp) {}
 

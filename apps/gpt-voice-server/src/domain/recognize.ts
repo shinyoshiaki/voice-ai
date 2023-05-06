@@ -1,6 +1,6 @@
 import Event from "rx.mini";
-import { Session, SessionFactory } from "../../../../../libs/rtp2text/src";
-import { config } from "../../config";
+import { Session, SessionFactory } from "../../../../libs/rtp2text/src";
+import { config } from "../config";
 import { RtpPacket } from "werift";
 
 const sessionFactory = new SessionFactory({

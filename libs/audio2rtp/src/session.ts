@@ -62,7 +62,7 @@ export class Audio2Rtp {
 
   private queue = new PromiseQueue();
   speaking = false;
-  onSpeakChanged = new Event();
+  onSpeakChanged = new Event<[boolean]>();
   stopped = false;
 
   private speak(b: boolean) {
@@ -71,7 +71,7 @@ export class Audio2Rtp {
     }
 
     this.speaking = b;
-    this.onSpeakChanged.execute();
+    this.onSpeakChanged.execute(b);
   }
 
   async stop() {

@@ -19,7 +19,7 @@ import { aiStateAtom, chatLogsAtom } from "../state";
 import { useRecoilState, useSetRecoilState } from "recoil";
 import {
   AssistantFunctions,
-  Cancel,
+  CancelQuestion,
   ClearHistory,
 } from "@shinyoshiaki/gpt-voice-rpc";
 
@@ -61,7 +61,7 @@ export const Controller: FC<{}> = () => {
   };
 
   const stop = () => {
-    callConnection.sendMessage<Cancel>({ type: "cancel" });
+    callConnection.sendMessage<CancelQuestion>({ type: "cancelQuestion" });
   };
 
   const clearHistory = () => {

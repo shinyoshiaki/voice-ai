@@ -1,5 +1,7 @@
-import { UserSessionRepository } from "./domain/session/sessionRepository";
-import { CallUsecase } from "./usecase/call";
+import { UserServiceManager } from "./application/userServiceManager";
+import { CallUsecase } from "./application/call";
+import { AssistantUsecase } from "./application/assistant";
 
-const callSessionRepository = new UserSessionRepository();
-export const callUsecase = new CallUsecase(callSessionRepository);
+const userServiceManager = new UserServiceManager();
+export const callUsecase = new CallUsecase(userServiceManager);
+export const assistantUsecase = new AssistantUsecase();

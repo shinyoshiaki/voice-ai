@@ -1,22 +1,20 @@
 import { ChatFunctions } from "../../../../libs/gpt-voice-rpc/src";
-import { CallConnection } from "../domain/connection";
-import { AssistantUsecase } from "../usecase/assistant";
+import { assistantUsecase } from "../bootstrap";
 
-export function rpcController(
-  connection: CallConnection,
-  assistantUsecase: AssistantUsecase
-) {
-  const { unSubscribe } = connection.onMessage.subscribe(async (s) => {
+import { UserService } from "../infrastructure/userService";
+
+export function rpcController(service: UserService) {
+  const { unSubscribe } = service.connection.onMessage.subscribe(async (s) => {
     const { type } = JSON.parse(s as string) as ChatFunctions;
     switch (type) {
       case "clearHistory":
         {
-          assistantUsecase.clearHistory();
+          assistantUsecase.clearHistory(service);
         }
         break;
-      case "cancel":
+      case "cancelQuestion":
         {
-          await assistantUsecase.cancel();
+          await assistantUsecase.cancelQuestion(service);
         }
         break;
     }

@@ -1,11 +1,11 @@
 import { EventDisposer } from "rx.mini";
 import { Recognized, Thinking } from "../../../../libs/gpt-voice-rpc/src";
-import { ChatLogs } from "../domain/session/chat";
-import { CallConnection } from "../domain/connection";
-import { GptSession } from "../domain/session/gpt";
-import { RecognizeVoice } from "../domain/session/recognize";
+import { ChatLogs } from "./chat";
+import { CallConnection } from "./connection";
+import { GptSession } from "./gpt";
+import { RecognizeVoice } from "./recognize";
 
-export class UserUsecase {
+export class User {
   private disposer = new EventDisposer();
 
   constructor(
@@ -32,7 +32,7 @@ export class UserUsecase {
       .disposer(this.disposer);
   }
 
-  recognizing(sentence: string) {
+  private recognizing(sentence: string) {
     this.connection.sendMessage<Recognized>({
       type: "recognized",
       payload: this.chatLog.input({
@@ -43,7 +43,7 @@ export class UserUsecase {
     });
   }
 
-  recognized(sentence: string) {
+  private recognized(sentence: string) {
     try {
       this.connection.sendMessage<Recognized>({
         type: "recognized",

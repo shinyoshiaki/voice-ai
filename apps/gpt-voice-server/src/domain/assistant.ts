@@ -1,29 +1,29 @@
 import { EventDisposer } from "rx.mini";
-import { CallConnection } from "../domain/connection";
-import { ChatLogs } from "../domain/session/chat";
-import { GptSession } from "../domain/session/gpt";
-import { RecognizeVoice } from "../domain/session/recognize";
+import { CallConnection } from "./connection";
+import { ChatLogs } from "./chat";
+import { GptSession } from "./gpt";
+import { RecognizeVoice } from "./recognize";
 import { Audio2Rtp } from "../../../../libs/audio2rtp/src";
 import {
   Response,
   Speaking,
   Waiting,
 } from "../../../../libs/gpt-voice-rpc/src";
-import { TtsClient } from "../domain/session/tts";
+import { TtsSession } from "./tts";
 
-export class AssistantUsecase {
+export class Assistant {
   private disposer = new EventDisposer();
 
   constructor(
-    private connection: CallConnection,
-    private chatLog: ChatLogs,
-    private gptSession: GptSession,
-    private recognizeVoice: RecognizeVoice,
-    private audio: Audio2Rtp,
-    private tts: TtsClient
+    public connection: CallConnection,
+    public chatLog: ChatLogs,
+    public gptSession: GptSession,
+    public recognizeVoice: RecognizeVoice,
+    public audio: Audio2Rtp,
+    public tts: TtsSession
   ) {
     gptSession.onResponse
-      .queuingSubscribe(async ({ message, end }) => {
+      .subscribe(({ message, end }) => {
         this.text2speak(message, end);
       })
       .disposer(this.disposer);
@@ -33,8 +33,8 @@ export class AssistantUsecase {
       })
       .disposer(this.disposer);
     audio.onSpeakChanged
-      .subscribe(() => {
-        if (audio.speaking) {
+      .subscribe((speaking) => {
+        if (speaking) {
           this.speaking();
         } else {
           this.waiting();
@@ -48,10 +48,11 @@ export class AssistantUsecase {
     this.chatLog.clear();
   }
 
-  async cancel() {
+  async cancelSpeaking() {
     this.gptSession.stop();
     await this.audio.stop();
     this.chatLog.cancel();
+
     this.waiting();
   }
 

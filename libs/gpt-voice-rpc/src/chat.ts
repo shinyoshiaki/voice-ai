@@ -4,8 +4,8 @@ export interface ClearHistory extends RPC {
   type: "clearHistory";
 }
 
-export interface Cancel extends RPC {
-  type: "cancel";
+export interface CancelQuestion extends RPC {
+  type: "cancelQuestion";
 }
 
-export type ChatFunctions = ClearHistory | Cancel;
+export type ChatFunctions = ClearHistory | CancelQuestion;
