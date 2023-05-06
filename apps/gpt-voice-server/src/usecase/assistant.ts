@@ -9,7 +9,7 @@ import {
   Response,
   Speaking,
   Waiting,
-} from "../../../../libs/rpc/src";
+} from "../../../../libs/gpt-voice-rpc/src";
 import { TtsClient } from "../domain/session/tts";
 
 export class AssistantUsecase {
