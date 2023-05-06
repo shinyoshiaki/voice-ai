@@ -1,17 +1,28 @@
+import { rpcController } from "../controller/rpc";
+import { CallConnection } from "../domain/connection";
 import { UserSessionRepository } from "../domain/session/sessionRepository";
 
 export class CallUsecase {
-  constructor(private callSessionRepository: UserSessionRepository) {}
+  constructor(private userSessionRepository: UserSessionRepository) {}
 
   async call() {
-    const session = await this.callSessionRepository.create();
-    const connection = session.connection;
+    const connection = new CallConnection();
     const sdp = await connection.offer();
+
+    const session = await this.userSessionRepository.create(connection);
+    const destroy = rpcController(connection, session.assistantUsecase);
+
+    connection.onClosed.once(() => {
+      destroy();
+      session.destroy();
+      this.userSessionRepository.delete(session.id);
+    });
+
     return { id: session.id, sdp, models: ["gpt3"] };
   }
 
   async answer({ sessionId, answer }: { sessionId: string; answer: object }) {
-    const session = this.callSessionRepository.get(sessionId);
+    const session = this.userSessionRepository.get(sessionId);
     if (!session) {
       throw new Error("session not found");
     }
@@ -26,7 +37,7 @@ export class CallUsecase {
     sessionId: string;
     ice: object;
   }) {
-    const session = this.callSessionRepository.get(sessionId);
+    const session = this.userSessionRepository.get(sessionId);
     if (!session) {
       throw new Error("session not found");
     }

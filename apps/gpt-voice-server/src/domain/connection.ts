@@ -9,6 +9,7 @@ export class CallConnection {
   private dc = this.pc.createDataChannel("messaging");
   onRtp = new Event<[RtpPacket]>();
   onMessage = new Event<[string]>();
+  onClosed = new Event();
 
   constructor() {
     this.transceiver.onTrack.once((track) => {
@@ -19,6 +20,11 @@ export class CallConnection {
     this.dc.message.subscribe((message) => {
       console.log({ message });
       this.onMessage.execute(message as string);
+    });
+    this.pc.iceConnectionStateChange.subscribe((state) => {
+      if (state === "closed") {
+        this.onClosed.execute();
+      }
     });
   }
 

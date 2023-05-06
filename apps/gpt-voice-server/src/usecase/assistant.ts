@@ -1,11 +1,10 @@
 import { EventDisposer } from "rx.mini";
-import { CallConnection } from "../domain/session/connection";
+import { CallConnection } from "../domain/connection";
 import { ChatLogs } from "../domain/session/chat";
 import { GptSession } from "../domain/session/gpt";
 import { RecognizeVoice } from "../domain/session/recognize";
 import { Audio2Rtp } from "../../../../libs/audio2rtp/src";
 import {
-  ChatFunctions,
   Response,
   Speaking,
   Waiting,
@@ -23,23 +22,6 @@ export class AssistantUsecase {
     private audio: Audio2Rtp,
     private tts: TtsClient
   ) {
-    connection.onMessage
-      .subscribe(async (s) => {
-        const { type } = JSON.parse(s as string) as ChatFunctions;
-        switch (type) {
-          case "clearHistory":
-            {
-              this.clearHistory();
-            }
-            break;
-          case "cancel":
-            {
-              await this.cancel();
-            }
-            break;
-        }
-      })
-      .disposer(this.disposer);
     gptSession.onResponse
       .queuingSubscribe(async ({ message, end }) => {
         this.text2speak(message, end);
@@ -61,16 +43,20 @@ export class AssistantUsecase {
       .disposer(this.disposer);
   }
 
-  private clearHistory() {
+  clearHistory() {
     this.gptSession.clearHistory();
     this.chatLog.clear();
   }
 
-  private async cancel() {
+  async cancel() {
     this.gptSession.stop();
     await this.audio.stop();
     this.chatLog.cancel();
     this.waiting();
+  }
+
+  destroy() {
+    this.disposer.dispose();
   }
 
   private text2speak(message: string, end?: boolean) {
@@ -101,9 +87,5 @@ export class AssistantUsecase {
   private waiting() {
     this.recognizeVoice.muted = false;
     this.connection.sendMessage<Waiting>({ type: "waiting" });
-  }
-
-  destroy() {
-    this.disposer.dispose();
   }
 }

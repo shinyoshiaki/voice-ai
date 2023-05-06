@@ -1,7 +1,7 @@
 import { EventDisposer } from "rx.mini";
 import { Recognized, Thinking } from "../../../../libs/gpt-voice-rpc/src";
 import { ChatLogs } from "../domain/session/chat";
-import { CallConnection } from "../domain/session/connection";
+import { CallConnection } from "../domain/connection";
 import { GptSession } from "../domain/session/gpt";
 import { RecognizeVoice } from "../domain/session/recognize";
 
