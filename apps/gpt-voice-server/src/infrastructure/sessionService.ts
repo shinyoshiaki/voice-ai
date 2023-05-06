@@ -1,48 +1,42 @@
 import { Audio2Rtp } from "../../../../libs/audio2rtp/src";
-import { Assistant } from "../domain/assistant";
-import { User } from "../domain/user";
+
 import { CallConnection } from "../domain/connection";
-import { ChatLogs } from "../domain/chat";
+import { ChatLogManager } from "../domain/chat";
 import { GptSession } from "../domain/gpt";
 import { RecognizeVoice } from "../domain/recognize";
 import { TtsSession } from "../domain/tts";
 import { randomUUID } from "crypto";
 
-export class UserService {
+export class SessionService {
   readonly id = randomUUID();
+
   private constructor(
-    public user: User,
-    public assistant: Assistant,
-    public connection: CallConnection
+    public connection: CallConnection,
+    public audio2Rtp: Audio2Rtp,
+    public recognizeVoice: RecognizeVoice,
+    public chatLog: ChatLogManager,
+    public tts: TtsSession,
+    public gptSession: GptSession
   ) {}
 
   static async Create(connection: CallConnection) {
     const audio = await Audio2Rtp.Create();
     const recognizeVoice = await RecognizeVoice.Create();
-    const chatLog = new ChatLogs();
+    const chatLog = new ChatLogManager();
     const tts = new TtsSession(audio);
     const gptSession = new GptSession();
 
-    const userUsecase = new User(
+    return new SessionService(
       connection,
-      chatLog,
-      gptSession,
-      recognizeVoice
-    );
-    const assistantUsecase = new Assistant(
-      connection,
-      chatLog,
-      gptSession,
-      recognizeVoice,
       audio,
-      tts
+      recognizeVoice,
+      chatLog,
+      tts,
+      gptSession
     );
-
-    return new UserService(userUsecase, assistantUsecase, connection);
   }
 
   destroy() {
-    this.user.destroy();
-    this.assistant.destroy();
+    // todo impl
   }
 }

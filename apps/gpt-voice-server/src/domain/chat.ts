@@ -1,4 +1,4 @@
-export class ChatLogs {
+export class ChatLogManager {
   logs: ChatLog[] = [];
 
   cancel() {

@@ -1,11 +1,11 @@
 import { CallConnection } from "../domain/connection";
-import { UserService } from "../infrastructure/userService";
+import { SessionService } from "../infrastructure/sessionService";
 
-export class UserServiceManager {
-  private services = new Map<string, UserService>();
+export class SessionServiceManager {
+  private services = new Map<string, SessionService>();
 
   async create(connection: CallConnection) {
-    const service = await UserService.Create(connection);
+    const service = await SessionService.Create(connection);
     this.services.set(service.id, service);
     return service;
   }
