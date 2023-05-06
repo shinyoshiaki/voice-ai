@@ -1,0 +1,24 @@
+{
+  "name": "@shinyoshiaki/gpt-voice-api",
+  "version": "0.0.1",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "main": "lib/index.js",
+  "module": "lib/index.mjs",
+  "scripts": {
+    "build": "tsc -p ./tsconfig.production.json",
+    "bundle": "esbuild src/index.ts --bundle --format=esm --target=es6 --outfile=lib/index.mjs",
+    "watch": "tsc -p ./tsconfig.production.json --watch",
+    "schema": "ts-node scripts/openapi.ts",
+    "generate-api": "npm run schema && swagger-typescript-api -p openapi.json -o ./src -n api.ts && npm run build && npm run bundle"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.28.9",
+    "isomorphic-fetch": "^3.0.0"
+  },
+  "devDependencies": {
+    "swagger-typescript-api": "^12.0.4",
+    "openapi3-ts": "^4.1.2"
+  }
+}

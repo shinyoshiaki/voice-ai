@@ -1,10 +1,12 @@
 import Event from "rx.mini";
-import { RTCPeerConnection, RtpPacket } from "werift";
+import { RTCPeerConnection, RtpPacket, RTCIceCandidate } from "werift";
 
 export class CallConnection {
-  pc = new RTCPeerConnection();
-  transceiver = this.pc.addTransceiver("audio", { direction: "sendrecv" });
-  dc = this.pc.createDataChannel("messaging");
+  private pc = new RTCPeerConnection();
+  private transceiver = this.pc.addTransceiver("audio", {
+    direction: "sendrecv",
+  });
+  private dc = this.pc.createDataChannel("messaging");
   onRtp = new Event<[RtpPacket]>();
   onMessage = new Event<[string]>();
 
@@ -22,19 +24,22 @@ export class CallConnection {
 
   async offer() {
     await this.pc.setLocalDescription(await this.pc.createOffer());
-    const sdp = JSON.stringify(this.pc.localDescription);
-    return sdp;
+    return this.pc.localDescription!;
   }
 
   async answer(answer: { type: "offer" | "answer"; sdp: string }) {
     await this.pc.setRemoteDescription(answer).catch((e) => e);
   }
 
+  async addIceCandidate(ice: RTCIceCandidate) {
+    await this.pc.addIceCandidate(ice);
+  }
+
   async sendRtp(rtp: RtpPacket) {
     await this.transceiver.sender.sendRtp(rtp);
   }
 
-  send<T = object>(message: T) {
+  sendMessage<T = object>(message: T) {
     console.log({ message });
     this.dc.send(JSON.stringify(message));
   }

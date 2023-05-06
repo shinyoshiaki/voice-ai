@@ -1,9 +1,9 @@
 import { EventDisposer } from "rx.mini";
 import { Recognized, Thinking } from "../../../../libs/rpc/src";
-import { ChatLogs } from "../domain/chat";
-import { CallConnection } from "../domain/connection";
-import { GptSession } from "../domain/gpt";
-import { RecognizeVoice } from "../domain/recognize";
+import { ChatLogs } from "../domain/session/chat";
+import { CallConnection } from "../domain/session/connection";
+import { GptSession } from "../domain/session/gpt";
+import { RecognizeVoice } from "../domain/session/recognize";
 
 export class UserUsecase {
   private disposer = new EventDisposer();
@@ -33,7 +33,7 @@ export class UserUsecase {
   }
 
   recognizing(sentence: string) {
-    this.connection.send<Recognized>({
+    this.connection.sendMessage<Recognized>({
       type: "recognized",
       payload: this.chatLog.input({
         message: sentence,
@@ -45,7 +45,7 @@ export class UserUsecase {
 
   recognized(sentence: string) {
     try {
-      this.connection.send<Recognized>({
+      this.connection.sendMessage<Recognized>({
         type: "recognized",
         payload: this.chatLog.endInput(sentence),
       });
@@ -53,7 +53,7 @@ export class UserUsecase {
       this.gptSession.request(sentence).catch((e) => console.error(e));
 
       this.recognizeVoice.muted = true;
-      this.connection.send<Thinking>({
+      this.connection.sendMessage<Thinking>({
         type: "thinking",
       });
     } catch (error) {}

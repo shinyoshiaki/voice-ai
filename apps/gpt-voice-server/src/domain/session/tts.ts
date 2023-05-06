@@ -1,5 +1,5 @@
-import { Audio2Rtp } from "../../../../libs/audio2rtp/src";
-import { VoicevoxClient } from "../../../../libs/voicevox-client/src";
+import { Audio2Rtp } from "../../../../../libs/audio2rtp/src";
+import { VoicevoxClient } from "../../../../../libs/voicevox-client/src";
 
 const voicevox = new VoicevoxClient();
 

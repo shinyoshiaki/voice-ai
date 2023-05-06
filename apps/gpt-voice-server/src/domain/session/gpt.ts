@@ -1,5 +1,5 @@
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
-import { config } from "../config";
+import { config } from "../../config";
 import { IncomingMessage } from "http";
 import { Event } from "rx.mini";
 import { format } from "date-fns";

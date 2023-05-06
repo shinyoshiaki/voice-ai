@@ -1,8 +1,8 @@
 import { EventDisposer } from "rx.mini";
-import { CallConnection } from "../domain/connection";
-import { ChatLogs } from "../domain/chat";
-import { GptSession } from "../domain/gpt";
-import { RecognizeVoice } from "../domain/recognize";
+import { CallConnection } from "../domain/session/connection";
+import { ChatLogs } from "../domain/session/chat";
+import { GptSession } from "../domain/session/gpt";
+import { RecognizeVoice } from "../domain/session/recognize";
 import { Audio2Rtp } from "../../../../libs/audio2rtp/src";
 import {
   ChatFunctions,
@@ -10,7 +10,7 @@ import {
   Speaking,
   Waiting,
 } from "../../../../libs/rpc/src";
-import { TtsClient } from "../domain/tts";
+import { TtsClient } from "../domain/session/tts";
 
 export class AssistantUsecase {
   private disposer = new EventDisposer();
@@ -78,7 +78,7 @@ export class AssistantUsecase {
       .speak(message)
       .then(() => {
         if (!this.gptSession.stopped) {
-          this.connection.send<Response>({
+          this.connection.sendMessage<Response>({
             type: "response",
             payload: this.chatLog.input({ message, role: "assistant" }),
           });
@@ -86,7 +86,7 @@ export class AssistantUsecase {
           if (end) {
             this.chatLog.input({ message, role: "assistant" });
             this.chatLog.endInput();
-            this.connection.send<Waiting>({ type: "waiting" });
+            this.connection.sendMessage<Waiting>({ type: "waiting" });
           }
         }
       })
@@ -95,14 +95,12 @@ export class AssistantUsecase {
 
   private speaking() {
     this.recognizeVoice.muted = true;
-    const message: Speaking = { type: "speaking" };
-    this.connection.send(message);
+    this.connection.sendMessage<Speaking>({ type: "speaking" });
   }
 
   private waiting() {
     this.recognizeVoice.muted = false;
-    const message: Waiting = { type: "waiting" };
-    this.connection.send(message);
+    this.connection.sendMessage<Waiting>({ type: "waiting" });
   }
 
   destroy() {
