@@ -1,8 +1,22 @@
 import Event from "rx.mini";
-import { RTCPeerConnection, RtpPacket, RTCIceCandidate } from "werift";
+import {
+  RTCPeerConnection,
+  RtpPacket,
+  RTCIceCandidate,
+  RTCRtpHeaderExtensionParameters,
+  RTP_EXTENSION_URI,
+} from "werift";
 
 export class CallConnection {
-  private pc = new RTCPeerConnection();
+  private pc = new RTCPeerConnection({
+    headerExtensions: {
+      audio: [
+        new RTCRtpHeaderExtensionParameters({
+          uri: RTP_EXTENSION_URI.audioLevelIndication,
+        }),
+      ],
+    },
+  });
   private transceiver = this.pc.addTransceiver("audio", {
     direction: "sendrecv",
   });
@@ -25,6 +39,10 @@ export class CallConnection {
         this.onClosed.execute();
       }
     });
+  }
+
+  get extIdUriMap() {
+    return this.pc.extIdUriMap;
   }
 
   async offer() {

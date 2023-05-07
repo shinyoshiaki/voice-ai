@@ -1,7 +1,36 @@
 import { Recognized, Thinking } from "../../../../libs/gpt-voice-rpc/src";
 import { SessionService } from "../infrastructure/sessionService";
+import {
+  RtpPacket,
+  rtpHeaderExtensionsParser,
+  RTP_EXTENSION_URI,
+  AudioLevelIndicationPayload,
+} from "werift";
 
 export class UserUsecase {
+  inputRecognizeSession =
+    ({ connection, recognizeVoice }: SessionService) =>
+    async (rtp: RtpPacket) => {
+      const extensions = rtpHeaderExtensionsParser(
+        rtp.header.extensions,
+        connection.extIdUriMap
+      );
+      const audioLevel = extensions[
+        RTP_EXTENSION_URI.audioLevelIndication
+      ] as AudioLevelIndicationPayload;
+
+      if (audioLevel) {
+        if (audioLevel.v && audioLevel.level < 127) {
+          await recognizeVoice.inputRtp(rtp);
+          return;
+        } else {
+          return;
+        }
+      }
+
+      await recognizeVoice.inputRtp(rtp);
+    };
+
   recognizing =
     ({ connection, chatLog }: SessionService) =>
     (sentence: string) => {

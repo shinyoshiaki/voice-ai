@@ -11,6 +11,7 @@ import {
 import { Event } from "rx.mini";
 import { randomUUID } from "crypto";
 import { exec } from "child_process";
+import { WaveFile } from "wavefile";
 
 export class Audio2Rtp {
   udp = createSocket("udp4");
@@ -84,47 +85,51 @@ export class Audio2Rtp {
     }
   }
 
-  async inputWav(buf: Buffer) {
+  async inputWav(buf?: Buffer) {
     this.stopped = false;
-
     this.speak(true);
-    await this.queue.push(async () => {
-      const filePath = `./tmp${randomUUID()}.wav`;
 
-      this.replace = true;
+    if (buf) {
+      await this.queue.push(async () => {
+        const filePath = `./tmp${randomUUID()}.wav`;
+        console.log("speaking:" + filePath);
+        console.time("speaking:" + filePath);
 
-      await writeFile(filePath, buf);
-      const duration = await new Promise<number>((r, f) => {
-        ffmpeg.ffprobe(filePath, (err, metadata) => {
-          if (err) {
-            f(err);
-          }
-          if (metadata) {
-            const duration = metadata.format.duration ?? 0;
-            r(duration);
-          }
+        this.replace = true;
+        await writeFile(filePath, buf);
+
+        console.time("duration:" + filePath);
+        const wav = new WaveFile(buf);
+        const fmt = wav.fmt as any;
+        const data = wav.data as any;
+        const sampleRate = fmt.sampleRate;
+        const numSamples = (data.samples.length / fmt.bitsPerSample) * 8;
+        const duration = numSamples / sampleRate;
+        console.timeEnd("duration:" + filePath);
+
+        const process = exec(
+          `gst-launch-1.0 filesrc location=${filePath} ! decodebin ! audioconvert ! audioresample ! audio/x-raw, rate=48000 ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${this.port}`
+        );
+        process.on("error", (code) => {
+          console.error({ code });
         });
+        await new Promise((r) =>
+          setTimeout(
+            r,
+            duration * 1000 +
+              // 要調整
+              100
+          )
+        );
+        process.kill();
+        await rm(filePath);
+
+        console.timeEnd("speaking:" + filePath);
       });
+    } else {
+      await this.queue.push(async () => {});
+    }
 
-      const process = exec(
-        `gst-launch-1.0 filesrc location=${filePath} ! decodebin ! audioconvert ! audioresample ! audio/x-raw, rate=48000 ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${this.port}`
-      );
-      process.on("error", (code) => {
-        console.error({ code });
-      });
-      await new Promise((r) =>
-        setTimeout(
-          r,
-          duration * 1000 +
-            // 要調整
-            100
-        )
-      );
-
-      await rm(filePath);
-
-      process.kill();
-    });
     if (this.queue.queue.length === 0) {
       this.speak(false);
     }

@@ -6,6 +6,8 @@ services:
     # localhost
     network_mode: host
     restart: always
+    environment:
+      - VV_CPU_NUM_THREADS=11
     ports:
       - "50021:50021"
   gpt-voice-server:

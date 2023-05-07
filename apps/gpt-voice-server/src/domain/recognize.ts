@@ -1,5 +1,8 @@
 import Event from "rx.mini";
-import { Session, SessionFactory } from "../../../../libs/rtp2text/src";
+import {
+  RecognizeSession,
+  SessionFactory,
+} from "../../../../libs/rtp2text/src";
 import { config } from "../config";
 import { RtpPacket } from "werift";
 
@@ -18,7 +21,7 @@ const ngWordsStartWith = [
   .reverse();
 
 export class RecognizeVoice {
-  session!: Session;
+  session!: RecognizeSession;
   onRecognized = new Event<[string]>();
   onRecognizing = new Event<[string]>();
   muted = false;
@@ -71,6 +74,9 @@ export class RecognizeVoice {
   }
 
   async inputRtp(rtp: RtpPacket) {
+    if (this.muted) {
+      return;
+    }
     await this.session.inputRtp(rtp);
   }
 }

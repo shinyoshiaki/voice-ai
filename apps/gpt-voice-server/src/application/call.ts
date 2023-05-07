@@ -34,7 +34,7 @@ export class CallUsecase {
       });
       connection.onRtp
         .subscribe(async (rtp) => {
-          await recognizeVoice.inputRtp(rtp);
+          await userUsecase.inputRecognizeSession(service)(rtp);
         })
         .disposer(disposer);
     }
