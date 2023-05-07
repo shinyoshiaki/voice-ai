@@ -18,7 +18,6 @@ export class CallConnection {
       });
     });
     this.dc.message.subscribe((message) => {
-      console.log({ message });
       this.onMessage.execute(message as string);
     });
     this.pc.iceConnectionStateChange.subscribe((state) => {
@@ -46,7 +45,6 @@ export class CallConnection {
   }
 
   sendMessage<T = object>(message: T) {
-    console.log({ message });
     this.dc.send(JSON.stringify(message));
   }
 }

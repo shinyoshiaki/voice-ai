@@ -43,7 +43,6 @@ export class AssistantUsecase {
             });
 
             if (end) {
-              chatLog.input({ message, role: "assistant" });
               chatLog.endInput();
               connection.sendMessage<Waiting>({ type: "waiting" });
             }
