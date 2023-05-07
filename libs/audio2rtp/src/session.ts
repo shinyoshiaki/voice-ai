@@ -1,5 +1,4 @@
-import { createSocket } from "dgram";
-import ffmpeg from "fluent-ffmpeg";
+import { Socket, createSocket } from "dgram";
 import { rm, writeFile } from "fs/promises";
 import {
   PromiseQueue,
@@ -14,8 +13,7 @@ import { exec } from "child_process";
 import { WaveFile } from "wavefile";
 
 export class Audio2Rtp {
-  udp = createSocket("udp4");
-  port!: number;
+  private udp?: Socket;
   onRtp = new Event<[RtpPacket]>();
   private replace = false;
   private seqOffset: number = 0;
@@ -23,7 +21,15 @@ export class Audio2Rtp {
   private sequenceNumber?: number;
   private timestamp?: number;
 
-  private constructor() {
+  private constructor() {}
+
+  private listenUdp(port: number) {
+    if (this.udp) {
+      this.udp.close();
+    }
+    this.udp = createSocket("udp4");
+    this.udp.bind(port);
+
     this.udp.on("message", (data) => {
       const rtp = RtpPacket.deSerialize(data);
       const header = rtp.header;
@@ -40,11 +46,11 @@ export class Audio2Rtp {
         this.replace = false;
       }
 
-      header.timestamp = uint32Add(header.timestamp, this.timestampOffset);
       header.sequenceNumber = uint16Add(header.sequenceNumber, this.seqOffset);
+      header.timestamp = uint32Add(header.timestamp, this.timestampOffset);
 
-      this.timestamp = header.timestamp;
       this.sequenceNumber = header.sequenceNumber;
+      this.timestamp = header.timestamp;
 
       this.onRtp.execute(rtp);
     });
@@ -57,8 +63,8 @@ export class Audio2Rtp {
   }
 
   private async init() {
-    this.port = await randomPort();
-    this.udp.bind(this.port);
+    const port = await randomPort();
+    this.listenUdp(port);
   }
 
   private queue = new PromiseQueue();
@@ -96,6 +102,8 @@ export class Audio2Rtp {
         console.time("speaking:" + filePath);
 
         this.replace = true;
+        const port = await randomPort();
+        this.listenUdp(port);
         await writeFile(filePath, buf);
 
         console.time("duration:" + filePath);
@@ -108,20 +116,14 @@ export class Audio2Rtp {
         console.timeEnd("duration:" + filePath);
 
         const process = exec(
-          `gst-launch-1.0 filesrc location=${filePath} ! decodebin ! audioconvert ! audioresample ! audio/x-raw, rate=48000 ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${this.port}`
+          `gst-launch-1.0 filesrc location=${filePath} ! decodebin ! audioconvert ! audioresample ! audio/x-raw, rate=48000 ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${port}`
         );
         process.on("error", (code) => {
           console.error({ code });
         });
-        await new Promise((r) =>
-          setTimeout(
-            r,
-            duration * 1000 +
-              // 要調整
-              100
-          )
-        );
+        await new Promise((r) => setTimeout(r, duration * 1000));
         process.kill();
+
         await rm(filePath);
 
         console.timeEnd("speaking:" + filePath);
