@@ -1,0 +1,14 @@
+{
+  "name": "@shinyoshiaki/gpt-voice-rpc",
+  "version": "0.0.1",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc -p ./tsconfig.production.json",
+    "watch": "tsc -p ./tsconfig.production.json --watch"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

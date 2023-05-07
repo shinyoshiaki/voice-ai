@@ -9,11 +9,11 @@ RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - && \
 
 WORKDIR /local
 
-COPY ./apps/gpt-voice-server /local/apps/gpt-voice-server
-COPY ./libs /local/libs
-COPY package*.json /local/
-COPY cred.*ts /local/
-COPY vosk-model /local/vosk-model
+COPY ./apps/gpt-voice-server ./apps/gpt-voice-server
+COPY ./libs ./libs
+COPY package*.json ./
+COPY cred.*ts ./
+COPY vosk-model ./vosk-model
 
 RUN npm i
 

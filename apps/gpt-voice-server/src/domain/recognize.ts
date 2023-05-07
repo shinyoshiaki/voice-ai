@@ -1,21 +1,30 @@
 import Event from "rx.mini";
-import { Session, SessionFactory } from "../../../../libs/rtp2text/src";
+import {
+  RecognizeSession,
+  SessionFactory,
+} from "../../../../libs/rtp2text/src";
 import { config } from "../config";
 import { RtpPacket } from "werift";
 
 const sessionFactory = new SessionFactory({
   modelPath: config.modelPath,
 });
-const ngWords = ["えーっと", "えっとー", "えーと", "えー"]
+const ngWordsStartWith = [
+  "えーっと",
+  "えっとー",
+  "えーと",
+  "えっと",
+  "えー",
+  "ん",
+]
   .sort((a, b) => a.length - b.length)
   .reverse();
 
 export class RecognizeVoice {
-  session!: Session;
+  session!: RecognizeSession;
   onRecognized = new Event<[string]>();
   onRecognizing = new Event<[string]>();
   muted = false;
-  private constructor() {}
 
   private async init() {
     this.session = await sessionFactory.create();
@@ -30,14 +39,11 @@ export class RecognizeVoice {
         if (recognized.length === 1) {
           return;
         }
-        if (ngWords.includes(recognized)) {
+        if (ngWordsStartWith.includes(recognized)) {
           return;
         }
-        if (recognized[0] === "ん") {
-          recognized = recognized.slice(1);
-        }
 
-        for (const ng of ngWords) {
+        for (const ng of ngWordsStartWith) {
           if (recognized.startsWith(ng)) {
             recognized = recognized.slice(ng.length);
             break;
@@ -52,7 +58,7 @@ export class RecognizeVoice {
         if (recognizing.length === 1) {
           return;
         }
-        if (ngWords.includes(recognizing)) {
+        if (ngWordsStartWith.includes(recognizing)) {
           return;
         }
 
@@ -68,6 +74,9 @@ export class RecognizeVoice {
   }
 
   async inputRtp(rtp: RtpPacket) {
+    if (this.muted) {
+      return;
+    }
     await this.session.inputRtp(rtp);
   }
 }

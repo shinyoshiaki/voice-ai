@@ -1,0 +1,97 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "gpt voice api", "version": "0.0.1" },
+  "paths": {
+    "/call": {
+      "post": {
+        "description": "create call session",
+        "responses": {
+          "201": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sdp": { "type": "object", "properties": {} },
+                    "models": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "sessionId": { "type": "string" }
+                  },
+                  "required": ["sdp", "models", "sessionId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/call/{sessionId}/ice_candidate": {
+      "put": {
+        "description": "send client ice candidate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "candidate": { "type": "object", "properties": {} }
+                },
+                "required": ["candidate"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "success" } }
+      }
+    },
+    "/call/{sessionId}/answer": {
+      "put": {
+        "description": "send client answer",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "sdp": { "type": "object", "properties": {} } },
+                "required": ["sdp"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "success" } }
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "responses": {},
+    "parameters": {},
+    "examples": {},
+    "requestBodies": {},
+    "headers": {},
+    "securitySchemes": {},
+    "links": {},
+    "callbacks": {}
+  },
+  "tags": [],
+  "servers": []
+}

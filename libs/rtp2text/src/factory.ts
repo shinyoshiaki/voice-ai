@@ -1,19 +1,19 @@
 import vosk from "vosk";
 
-import { Session } from "./session";
+import { RecognizeSession } from "./session";
 
 export class SessionFactory {
   private readonly model = new vosk.Model(this.args.modelPath);
-  private readonly sessions: { [id: string]: Session } = {};
+  private readonly sessions: { [id: string]: RecognizeSession } = {};
 
   constructor(private args: { modelPath: string }) {}
 
   async create() {
-    const rec = new vosk.Recognizer({
+    const recognizer = new vosk.Recognizer({
       model: this.model,
       sampleRate: 48000,
     });
-    const session = await Session.Create(rec);
+    const session = await RecognizeSession.Create(recognizer);
     this.sessions[session.id] = session;
     return session;
   }

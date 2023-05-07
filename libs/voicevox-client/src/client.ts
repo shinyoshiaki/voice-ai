@@ -11,6 +11,8 @@ export class VoicevoxClient {
   async speak(text: string, props: { speaker?: number } = {}) {
     props.speaker = props.speaker ?? this.props.speaker;
 
+    console.log("speak:" + text);
+    console.time("speak:" + text);
     const query = await this.http.post(
       `/audio_query?speaker=${props.speaker}&text="${text}"`
     );
@@ -21,6 +23,7 @@ export class VoicevoxClient {
         responseType: "arraybuffer",
       }
     );
+    console.timeEnd("speak:" + text);
     return Buffer.from(res.data);
   }
 }

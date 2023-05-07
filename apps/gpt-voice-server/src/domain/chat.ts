@@ -1,18 +1,62 @@
-export class ChatLog {
-  index = 0;
-  content = "";
+export class ChatLogManager {
+  logs: ChatLog[] = [];
 
-  end(content: string) {
-    this.content = "";
-    return { content, index: this.index++ };
+  cancel() {
+    this.logs.pop();
   }
 
-  put(content: string) {
-    this.content += content;
-    return { content: this.content, index: this.index };
+  input({
+    message,
+    role,
+    overwrite,
+  }: {
+    message: string;
+    role: ChatLog["role"];
+    overwrite?: boolean;
+  }) {
+    overwrite = overwrite ?? false;
+
+    const last = this.logs.at(-1);
+    if (last && last.completed === false) {
+      if (overwrite) {
+        last.content = message;
+      } else {
+        last.content += message;
+      }
+      return last;
+    } else {
+      const log = {
+        role,
+        content: message,
+        completed: false,
+        index: this.logs.length,
+      };
+      this.logs.push(log);
+      return log;
+    }
   }
 
-  post(content: string) {
-    return { content, index: this.index };
+  /**@throws */
+  endInput(completeMessage?: string) {
+    const last = this.logs.at(-1);
+    if (!last) {
+      throw new Error();
+    }
+    last.completed = true;
+    if (completeMessage) {
+      last.content = completeMessage;
+    }
+    return last;
   }
+
+  clear() {
+    this.logs = [];
+  }
+}
+
+export interface ChatLog {
+  role: "user" | "assistant";
+  content: string;
+  completed: boolean;
+  index: number;
 }

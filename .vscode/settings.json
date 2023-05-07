@@ -4,6 +4,8 @@
     "Depacketize",
     "depacketizer",
     "openai",
+    "openapi",
+    "typebox",
     "voicevox",
     "vosk",
     "werift"

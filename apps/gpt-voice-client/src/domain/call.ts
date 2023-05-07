@@ -1,7 +1,9 @@
 import Event from "rx.mini";
 import { env } from "../../env";
+import { Api } from "@shinyoshiaki/gpt-voice-api";
 
 const endpoint = env.endpoint;
+const api = new Api({ baseUrl: endpoint });
 
 class CallConnection {
   peer!: RTCPeerConnection;
@@ -13,19 +15,14 @@ class CallConnection {
 
   async call() {
     const peer = new RTCPeerConnection({
-      // iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
     this.peer = peer;
-    const socket = new WebSocket(endpoint);
+    const { sdp, sessionId } = (await api.call.callCreate()).data;
 
-    const offer = await new Promise<any>(
-      (r) => (socket.onmessage = (ev) => r(JSON.parse(ev.data)))
-    );
-
-    peer.onicecandidate = ({ candidate }) => {
-      if (!candidate) {
-        const sdp = JSON.stringify(peer.localDescription);
-        socket.send(sdp);
+    peer.onicecandidate = async ({ candidate }) => {
+      if (candidate) {
+        await api.call.iceCandidateUpdate(sessionId, { candidate });
       }
     };
 
@@ -51,13 +48,14 @@ class CallConnection {
       };
     };
 
-    await peer.setRemoteDescription(offer);
+    await peer.setRemoteDescription(sdp as any);
     const answer = await peer.createAnswer();
     await peer.setLocalDescription(answer);
+    await api.call.answerUpdate(sessionId, { sdp: peer.localDescription });
   }
 
-  sendMessage(type: string, payload: any = {}) {
-    this.datachannel.send(JSON.stringify({ type, payload }));
+  sendMessage<T = object>(message: T) {
+    this.datachannel.send(JSON.stringify(message));
   }
 }
 
