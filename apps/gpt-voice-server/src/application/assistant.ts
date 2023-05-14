@@ -3,6 +3,7 @@ import {
   Speaking,
   Waiting,
 } from "../../../../libs/gpt-voice-rpc/src";
+import { assistantModelFactory } from "../domain/model/factory";
 import { SessionService } from "../infrastructure/sessionService";
 
 export class AssistantUsecase {
@@ -62,4 +63,11 @@ export class AssistantUsecase {
         connection.sendMessage<Waiting>({ type: "waiting" });
       }
     };
+
+  changeModel = (service: SessionService) => (model: string) => {
+    service.gptSession.stop();
+    const newSession = assistantModelFactory(model);
+    newSession.importHistory(service.gptSession.conversationHistory);
+    service.gptSession = newSession;
+  };
 }

@@ -4,6 +4,7 @@ import { rpcController } from "../controller/rpc";
 import { CallConnection } from "../domain/connection";
 import { SessionServiceManager } from "./sessionServiceManager";
 import { SessionService } from "../infrastructure/sessionService";
+import { models } from "../domain/model/factory";
 
 export class CallUsecase {
   constructor(private sessionServiceManager: SessionServiceManager) {}
@@ -12,10 +13,13 @@ export class CallUsecase {
     const connection = new CallConnection();
     const sdp = await connection.offer();
 
-    const service = await this.sessionServiceManager.create(connection);
+    const service = await this.sessionServiceManager.create(
+      connection,
+      models[0]
+    );
     this.setupSession(service);
 
-    return { id: service.id, sdp, models: ["gpt3"] };
+    return { id: service.id, sdp, models };
   }
 
   private setupSession(service: SessionService) {

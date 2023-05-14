@@ -1,10 +1,11 @@
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
-import { config } from "../config";
+import { config } from "../../../config";
 import { IncomingMessage } from "http";
 import { Event } from "rx.mini";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import axios from "axios";
+import { AssistantModel } from "../base";
 
 const conf = new Configuration({
   apiKey: config.openai,
@@ -54,14 +55,22 @@ const SYSTEM_PROMPT =
 
 それでは会話を始めましょう。`;
 
-export class GptSession {
-  openai = new OpenAIApi(conf);
-  conversationHistory: ChatCompletionRequestMessage[] = [];
+export abstract class ChatGpt extends AssistantModel {
+  private openai = new OpenAIApi(conf);
   onResponse = new Event<[{ message: string; end?: boolean }]>();
   private messageBuffer: string[] = [];
-  sentenceBuffer = "";
+  private sentenceBuffer = "";
   private marks = ["、", "。", "・", "！", "?", "？", "：", ". ", "-"];
   stopped = false;
+  readonly name = this.props.modelName;
+
+  constructor(private props: { modelName: string }) {
+    super();
+  }
+
+  importHistory(history: ChatCompletionRequestMessage[]): void {
+    this.conversationHistory = history;
+  }
 
   private async systemConversation(): Promise<ChatCompletionRequestMessage[]> {
     return [
@@ -110,7 +119,7 @@ export class GptSession {
 
     const completion = await this.openai.createChatCompletion(
       {
-        model: config.gptModel,
+        model: this.props.modelName,
         messages,
         stream: true,
       },

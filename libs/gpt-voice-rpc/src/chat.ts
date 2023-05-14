@@ -8,4 +8,9 @@ export interface CancelQuestion extends RPC {
   type: "cancelQuestion";
 }
 
-export type ChatFunctions = ClearHistory | CancelQuestion;
+export interface ChangeModel extends RPC {
+  type: "changeModel";
+  payload: { model: string };
+}
+
+export type ChatFunctions = ClearHistory | CancelQuestion | ChangeModel;

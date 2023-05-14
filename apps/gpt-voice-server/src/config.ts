@@ -5,5 +5,4 @@ export const config = {
   openai: credentials.openai,
   modelPath: env.modelPath,
   port: env.voiceServer.port,
-  gptModel: env.gptModel,
 };

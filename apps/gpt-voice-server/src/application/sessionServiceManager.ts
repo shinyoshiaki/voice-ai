@@ -4,8 +4,8 @@ import { SessionService } from "../infrastructure/sessionService";
 export class SessionServiceManager {
   private services = new Map<string, SessionService>();
 
-  async create(connection: CallConnection) {
-    const service = await SessionService.Create(connection);
+  async create(connection: CallConnection, model: string) {
+    const service = await SessionService.Create(connection, model);
     this.services.set(service.id, service);
     return service;
   }

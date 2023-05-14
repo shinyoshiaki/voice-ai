@@ -2,10 +2,11 @@ import { Audio2Rtp } from "../../../../libs/audio2rtp/src";
 
 import { CallConnection } from "../domain/connection";
 import { ChatLogManager } from "../domain/chat";
-import { GptSession } from "../domain/gpt";
 import { RecognizeVoice } from "../domain/recognize";
 import { TtsSession } from "../domain/tts";
 import { randomUUID } from "crypto";
+import { AssistantModel } from "../domain/model/base";
+import { assistantModelFactory } from "../domain/model/factory";
 
 export class SessionService {
   readonly id = randomUUID();
@@ -16,15 +17,15 @@ export class SessionService {
     public recognizeVoice: RecognizeVoice,
     public chatLog: ChatLogManager,
     public tts: TtsSession,
-    public gptSession: GptSession
+    public gptSession: AssistantModel
   ) {}
 
-  static async Create(connection: CallConnection) {
+  static async Create(connection: CallConnection, model: string) {
     const audio = await Audio2Rtp.Create();
     const recognizeVoice = await RecognizeVoice.Create();
     const chatLog = new ChatLogManager();
     const tts = new TtsSession(audio);
-    const gptSession = new GptSession();
+    const gptSession = assistantModelFactory(model);
 
     return new SessionService(
       connection,
