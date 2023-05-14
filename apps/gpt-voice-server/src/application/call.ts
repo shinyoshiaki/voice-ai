@@ -24,59 +24,23 @@ export class CallUsecase {
 
   private setupSession(service: SessionService) {
     const destroyRpcController = rpcController(service);
-    const disposer = new EventDisposer();
 
-    const { connection, audio2Rtp, gptSession, recognizeVoice } = service;
+    const { connection, audio2Rtp } = service;
 
-    {
-      connection.onClosed.once(() => {
-        destroyRpcController();
-        disposer.dispose();
+    connection.onClosed.once(() => {
+      destroyRpcController();
+      this.sessionServiceManager.delete(service.id);
+      service.destroy();
+    });
+    audio2Rtp.onRtp.subscribe((rtp) => {
+      connection.sendRtp(rtp);
+    });
 
-        this.sessionServiceManager.delete(service.id);
-        service.destroy();
-      });
-      connection.onRtp
-        .subscribe(async (rtp) => {
-          await userUsecase.inputRecognizeSession(service)(rtp);
-        })
-        .disposer(disposer);
-    }
+    userUsecase.setupConnection(service)();
+    userUsecase.setupRecognizeVoice(service)();
 
-    {
-      gptSession.onResponse
-        .subscribe(({ message, end }) => {
-          assistantUsecase.text2speak(service)(message, end);
-        })
-        .disposer(disposer);
-    }
-
-    {
-      audio2Rtp.onRtp
-        .subscribe((rtp) => {
-          connection.sendRtp(rtp);
-        })
-        .disposer(disposer);
-      audio2Rtp.onSpeakChanged
-        .subscribe((speaking) => {
-          assistantUsecase.changeSpeaking(service)(speaking);
-        })
-        .disposer(disposer);
-    }
-
-    {
-      recognizeVoice.onRecognized
-        .subscribe((recognized) => {
-          userUsecase.recognized(service)(recognized);
-        })
-        .disposer(disposer);
-
-      recognizeVoice.onRecognizing
-        .subscribe((sentence) => {
-          userUsecase.recognizing(service)(sentence);
-        })
-        .disposer(disposer);
-    }
+    assistantUsecase.setupGptSession(service)();
+    assistantUsecase.setupAudio2Rtp(service)();
   }
 
   async answer({ sessionId, answer }: { sessionId: string; answer: object }) {

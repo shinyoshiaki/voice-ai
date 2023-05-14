@@ -57,12 +57,11 @@ const SYSTEM_PROMPT =
 
 export abstract class ChatGpt extends AssistantModel {
   private openai = new OpenAIApi(conf);
-  onResponse = new Event<[{ message: string; end?: boolean }]>();
   private messageBuffer: string[] = [];
   private sentenceBuffer = "";
   private marks = ["、", "。", "・", "！", "?", "？", "：", ". ", "-"];
   stopped = false;
-  readonly name = this.props.modelName;
+  readonly modelName = this.props.modelName;
 
   constructor(private props: { modelName: string }) {
     super();
@@ -106,6 +105,7 @@ export abstract class ChatGpt extends AssistantModel {
     this.messageBuffer = [];
     this.onResponse.taskQueue.queue = [];
     this.stopped = true;
+    this.onResponse.allUnsubscribe();
   }
 
   async request(message: string): Promise<void> {

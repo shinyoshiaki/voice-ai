@@ -23,7 +23,7 @@ import {
   ClearHistory,
 } from "@shinyoshiaki/gpt-voice-rpc";
 
-export const Controller: FC<{}> = () => {
+export const BottomController: FC<{}> = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [muted, setMuted] = useState(false);
   const [speaker, setSpeaker] = useState(true);

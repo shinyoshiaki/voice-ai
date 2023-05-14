@@ -64,10 +64,26 @@ export class AssistantUsecase {
       }
     };
 
+  setupGptSession = (service: SessionService) => () => {
+    service.gptSession.onResponse.subscribe(({ message, end }) => {
+      this.text2speak(service)(message, end);
+    });
+  };
+
+  setupAudio2Rtp = (service: SessionService) => () => {
+    service.audio2Rtp.onSpeakChanged.subscribe((speaking) => {
+      this.changeSpeaking(service)(speaking);
+    });
+  };
+
   changeModel = (service: SessionService) => (model: string) => {
+    if (service.gptSession.modelName === model) return;
+
     service.gptSession.stop();
     const newSession = assistantModelFactory(model);
     newSession.importHistory(service.gptSession.conversationHistory);
     service.gptSession = newSession;
+
+    this.setupGptSession(service)();
   };
 }

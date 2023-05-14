@@ -1,8 +1,8 @@
 import { FC, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import { ChakraProvider, Text, Spinner, Box, HStack } from "@chakra-ui/react";
-import { Controller } from "./components/Controller";
-import { SelectModel } from "./components/SelectModel";
+import { BottomController } from "./components/Bottom";
+import { HeaderController } from "./components/Header";
 import { callConnection } from "./domain/call";
 import { RecoilRoot, useRecoilState, useRecoilValue } from "recoil";
 import { ChatLogs } from "./components/ChatLog";
@@ -48,15 +48,9 @@ const App: FC = () => {
   return (
     <Box>
       <Box p={5}>
-        <SelectModel />
+        <HeaderController />
       </Box>
-      <Box p={1}>
-        <HStack>
-          {connectionState === "connected" && <Text>connected</Text>}
-          {connectionState === "connecting" && <Spinner />}
-        </HStack>
-      </Box>
-      <Box p={2} overflowY="auto" ref={contentRef} h="calc(100vh - 230px)">
+      <Box p={2} overflowY="auto" ref={contentRef} h="calc(100vh - 250px)">
         <ChatLogs />
       </Box>
       <Box
@@ -67,7 +61,7 @@ const App: FC = () => {
         zIndex="sticky"
         bg="white"
       >
-        <Controller />
+        <BottomController />
       </Box>
     </Box>
   );

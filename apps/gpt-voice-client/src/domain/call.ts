@@ -12,13 +12,18 @@ class CallConnection {
   onConnectionstateChange = new Event<[RTCPeerConnectionState]>();
   onMessage = new Event<[{ type: string; payload: any }]>();
   onAudioStream = new Event<[MediaStream]>();
+  models: string[] = [];
+  onReady = new Event<[]>();
+  ready = false;
 
   async call() {
     const peer = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
     this.peer = peer;
-    const { sdp, sessionId } = (await api.call.callCreate()).data;
+    const { sdp, sessionId, models } = (await api.call.callCreate()).data;
+
+    this.models = models;
 
     peer.onicecandidate = async ({ candidate }) => {
       if (candidate) {
@@ -52,6 +57,9 @@ class CallConnection {
     const answer = await peer.createAnswer();
     await peer.setLocalDescription(answer);
     await api.call.answerUpdate(sessionId, { sdp: peer.localDescription });
+
+    this.ready = true;
+    this.onReady.execute();
   }
 
   sendMessage<T = object>(message: T) {

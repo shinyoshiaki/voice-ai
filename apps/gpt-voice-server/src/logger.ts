@@ -9,8 +9,8 @@ export type LogLevel = (typeof logLevelTypes)[number];
 export type LogFormat = "object" | "string";
 
 export class Logger {
-  static level: LogLevel = "error";
-  static format: LogFormat = "object";
+  static level: LogLevel = "debug";
+  static format: LogFormat = "string";
   static onLog: (props: {
     level: string;
     timestamp: string;

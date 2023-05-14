@@ -8,6 +8,24 @@ import {
 } from "werift";
 
 export class UserUsecase {
+  setupRecognizeVoice = (service: SessionService) => () => {
+    service.recognizeVoice.onRecognized.subscribe((recognized) => {
+      this.recognized(service)(recognized);
+    });
+    service.recognizeVoice.onRecognizing.subscribe((sentence) => {
+      this.recognizing(service)(sentence);
+    });
+    service.connection.onRtp.subscribe(async (rtp) => {
+      await this.inputRecognizeSession(service)(rtp);
+    });
+  };
+
+  setupConnection = (service: SessionService) => () => {
+    service.connection.onRtp.subscribe(async (rtp) => {
+      await this.inputRecognizeSession(service)(rtp);
+    });
+  };
+
   inputRecognizeSession =
     ({ connection, recognizeVoice }: SessionService) =>
     async (rtp: RtpPacket) => {

@@ -3,6 +3,7 @@ import Event from "rx.mini";
 
 export abstract class AssistantModel {
   static readonly modelName: string;
+  abstract readonly modelName: string;
   conversationHistory: ChatCompletionRequestMessage[] = [];
   onResponse = new Event<[{ message: string; end?: boolean }]>();
   stopped = false;
