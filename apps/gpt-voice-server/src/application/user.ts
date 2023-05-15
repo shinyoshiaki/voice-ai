@@ -15,9 +15,6 @@ export class UserUsecase {
     service.recognizeVoice.onRecognizing.subscribe((sentence) => {
       this.recognizing(service)(sentence);
     });
-    service.connection.onRtp.subscribe(async (rtp) => {
-      await this.inputRecognizeSession(service)(rtp);
-    });
   };
 
   setupConnection = (service: SessionService) => () => {
