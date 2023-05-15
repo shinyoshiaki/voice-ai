@@ -79,4 +79,10 @@ export class RecognizeVoice {
     }
     await this.session.inputRtp(rtp);
   }
+
+  stop() {
+    this.session.stop();
+    this.onRecognized.allUnsubscribe();
+    this.onRecognizing.allUnsubscribe();
+  }
 }

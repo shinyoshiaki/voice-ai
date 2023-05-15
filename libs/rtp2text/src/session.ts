@@ -6,6 +6,7 @@ import { RtpPacket } from "werift-rtp";
 export class RecognizeSession {
   readonly id = randomUUID();
   readonly onText = new Event<[{ result?: string; partial?: string }]>();
+  stopped = false;
 
   private readonly encoder = new OpusEncoder(48000, 1);
   private prevPartial = "";
@@ -13,6 +14,10 @@ export class RecognizeSession {
   private constructor(private recognizer: any) {}
 
   async inputRtp(rtp: RtpPacket) {
+    if (this.stopped) {
+      return;
+    }
+
     const decoded = this.encoder.decode(rtp.payload);
     this.recognize(decoded);
   }
@@ -42,5 +47,8 @@ export class RecognizeSession {
     }
   }
 
-  stop() {}
+  stop() {
+    this.stopped = true;
+    this.onText.allUnsubscribe();
+  }
 }

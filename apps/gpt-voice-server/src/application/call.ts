@@ -1,4 +1,3 @@
-import { EventDisposer } from "rx.mini";
 import { assistantUsecase, userUsecase } from "../bootstrap";
 import { rpcController } from "../controller/rpc";
 import { CallConnection } from "../domain/connection";
@@ -27,10 +26,10 @@ export class CallUsecase {
 
     const { connection, audio2Rtp } = service;
 
-    connection.onClosed.once(() => {
+    connection.onClosed.once(async () => {
       destroyRpcController();
       this.sessionServiceManager.delete(service.id);
-      service.destroy();
+      await service.destroy();
     });
     audio2Rtp.onRtp.subscribe((rtp) => {
       connection.sendRtp(rtp);

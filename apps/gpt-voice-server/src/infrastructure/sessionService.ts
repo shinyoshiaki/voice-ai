@@ -37,7 +37,10 @@ export class SessionService {
     );
   }
 
-  destroy() {
-    // todo impl
+  async destroy() {
+    this.recognizeVoice.stop();
+    this.gptSession.stop();
+    this.connection.stop();
+    await this.audio2Rtp.stop();
   }
 }

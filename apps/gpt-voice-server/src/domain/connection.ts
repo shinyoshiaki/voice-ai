@@ -65,4 +65,10 @@ export class CallConnection {
   sendMessage<T = object>(message: T) {
     this.dc.send(JSON.stringify(message));
   }
+
+  stop() {
+    this.pc.close();
+    this.onRtp.allUnsubscribe();
+    this.onMessage.allUnsubscribe();
+  }
 }
