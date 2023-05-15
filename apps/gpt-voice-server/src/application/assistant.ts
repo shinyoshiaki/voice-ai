@@ -7,6 +7,18 @@ import { assistantModelFactory } from "../domain/model/factory";
 import { SessionService } from "../infrastructure/sessionService";
 
 export class AssistantUsecase {
+  setupGptSession = (service: SessionService) => () => {
+    service.gptSession.onResponse.subscribe(({ message, end }) => {
+      this.text2speak(service)(message, end);
+    });
+  };
+
+  setupAudio2Rtp = (service: SessionService) => () => {
+    service.audio2Rtp.onSpeakChanged.subscribe((speaking) => {
+      this.changeSpeaking(service)(speaking);
+    });
+  };
+
   clearHistory =
     ({ gptSession, chatLog }: SessionService) =>
     () => {
@@ -63,18 +75,6 @@ export class AssistantUsecase {
         connection.sendMessage<Waiting>({ type: "waiting" });
       }
     };
-
-  setupGptSession = (service: SessionService) => () => {
-    service.gptSession.onResponse.subscribe(({ message, end }) => {
-      this.text2speak(service)(message, end);
-    });
-  };
-
-  setupAudio2Rtp = (service: SessionService) => () => {
-    service.audio2Rtp.onSpeakChanged.subscribe((speaking) => {
-      this.changeSpeaking(service)(speaking);
-    });
-  };
 
   changeModel = (service: SessionService) => (model: string) => {
     if (service.gptSession.modelName === model) return;
