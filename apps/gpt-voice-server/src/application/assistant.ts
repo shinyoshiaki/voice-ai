@@ -36,9 +36,9 @@ export class AssistantUsecase {
     }: SessionService) =>
     async () => {
       gptSession.stop();
-      await audio2Rtp.stop();
       chatLog.cancel();
 
+      await audio2Rtp.stop();
       recognizeVoice.muted = false;
       connection.sendMessage<Waiting>({ type: "waiting" });
     };

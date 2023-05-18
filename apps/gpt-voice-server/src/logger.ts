@@ -10,7 +10,7 @@ export type LogFormat = "object" | "string";
 
 export class Logger {
   static level: LogLevel = "debug";
-  static format: LogFormat = "string";
+  static format: LogFormat = "object";
   static onLog: (props: {
     level: string;
     timestamp: string;

@@ -1,11 +1,15 @@
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import { config } from "../../../config";
 import { IncomingMessage } from "http";
-import { Event } from "rx.mini";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import axios from "axios";
 import { AssistantModel } from "../base";
+import { Logger } from "../../../logger";
+
+const logger = new Logger(
+  "apps/gpt-voice-server/src/domain/model/chatgpt/base.ts"
+);
 
 const conf = new Configuration({
   apiKey: config.openai,
@@ -59,7 +63,7 @@ export abstract class ChatGpt extends AssistantModel {
   private openai = new OpenAIApi(conf);
   private messageBuffer: string[] = [];
   private sentenceBuffer = "";
-  private marks = ["、", "。", "・", "！", "?", "？", "：", ". ", "-"];
+  private marks = ["、", "。", "・", "！", "?", "？", "：", ". ", "-", "."];
   stopped = false;
   readonly modelName = this.props.modelName;
 
@@ -103,12 +107,14 @@ export abstract class ChatGpt extends AssistantModel {
 
   stop() {
     this.messageBuffer = [];
-    this.onResponse.taskQueue.queue = [];
     this.stopped = true;
-    this.onResponse.allUnsubscribe();
   }
 
   async request(message: string): Promise<void> {
+    const info = { operation: "request", message };
+
+    logger.debug(info);
+
     this.stopped = false;
     this.conversationHistory.push({ role: "user", content: message });
 
@@ -125,6 +131,7 @@ export abstract class ChatGpt extends AssistantModel {
       },
       { responseType: "stream" }
     );
+
     const stream = completion.data as unknown as IncomingMessage;
     for await (const chunk of stream as unknown as Promise<Buffer>[]) {
       if (this.stopped) {
@@ -144,8 +151,10 @@ export abstract class ChatGpt extends AssistantModel {
         }
 
         const json = JSON.parse(message);
+
         const token: string | undefined = json.choices[0].delta.content;
         if (token) {
+          logger.debug(info, token);
           this.response(token);
         }
       }
