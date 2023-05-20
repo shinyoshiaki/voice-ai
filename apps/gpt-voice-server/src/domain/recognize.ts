@@ -25,7 +25,6 @@ export class RecognizeVoice {
   onRecognized = new Event<[string]>();
   onRecognizing = new Event<[string]>();
   private _muted = false;
-
   setMuted(muted: boolean) {
     this._muted = muted;
   }
@@ -34,13 +33,12 @@ export class RecognizeVoice {
   setPaused(paused: boolean) {
     this._paused = paused;
     if (!paused) {
-      if (this.textBuffer) {
-        this.onRecognized.execute(this.textBuffer);
-        this.textBuffer = "";
-      }
+      this.recognized();
     }
   }
   private textBuffer = "";
+
+  private state: "waiting" | "recognizing" = "waiting";
 
   private async init() {
     this.session = await sessionFactory.create();
@@ -50,6 +48,8 @@ export class RecognizeVoice {
       }
 
       if (res.partial) {
+        this.state = "recognizing";
+
         const recognizing = res.partial;
         if (recognizing.length === 1) {
           return;
@@ -78,10 +78,22 @@ export class RecognizeVoice {
           return;
         }
 
-        this.onRecognized.execute(this.textBuffer);
-        this.textBuffer = "";
+        this.recognized();
       }
     });
+  }
+
+  private recognized() {
+    if (this.textBuffer) {
+      this.state = "waiting";
+      setTimeout(() => {
+        if (this.state === "recognizing") {
+          return;
+        }
+        this.onRecognized.execute(this.textBuffer);
+        this.textBuffer = "";
+      }, 2000);
+    }
   }
 
   static async Create() {
