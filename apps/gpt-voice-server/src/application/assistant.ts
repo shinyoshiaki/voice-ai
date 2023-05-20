@@ -39,7 +39,7 @@ export class AssistantUsecase {
       chatLog.cancel();
 
       await audio2Rtp.stop();
-      recognizeVoice.muted = false;
+      recognizeVoice.setMuted(false);
       connection.sendMessage<Waiting>({ type: "waiting" });
     };
 
@@ -68,10 +68,10 @@ export class AssistantUsecase {
     ({ recognizeVoice, connection }: SessionService) =>
     (speaking: boolean) => {
       if (speaking) {
-        recognizeVoice.muted = true;
+        recognizeVoice.setMuted(true);
         connection.sendMessage<Speaking>({ type: "speaking" });
       } else {
-        recognizeVoice.muted = false;
+        recognizeVoice.setMuted(false);
         connection.sendMessage<Waiting>({ type: "waiting" });
       }
     };

@@ -70,7 +70,7 @@ export class UserUsecase {
 
         gptSession.request(sentence).catch((e) => console.error(e));
 
-        recognizeVoice.muted = true;
+        recognizeVoice.setMuted(true);
         connection.sendMessage<Thinking>({
           type: "thinking",
         });

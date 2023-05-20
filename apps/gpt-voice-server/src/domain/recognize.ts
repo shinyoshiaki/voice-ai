@@ -24,12 +24,16 @@ export class RecognizeVoice {
   session!: RecognizeSession;
   onRecognized = new Event<[string]>();
   onRecognizing = new Event<[string]>();
-  muted = false;
+  private _muted = false;
+
+  setMuted(muted: boolean) {
+    this._muted = muted;
+  }
 
   private async init() {
     this.session = await sessionFactory.create();
     this.session.onText.subscribe(async (res) => {
-      if (this.muted) {
+      if (this._muted) {
         return;
       }
 
@@ -74,7 +78,7 @@ export class RecognizeVoice {
   }
 
   async inputRtp(rtp: RtpPacket) {
-    if (this.muted) {
+    if (this._muted) {
       return;
     }
     await this.session.inputRtp(rtp);
