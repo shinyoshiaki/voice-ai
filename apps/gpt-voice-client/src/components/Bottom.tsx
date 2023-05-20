@@ -13,7 +13,11 @@ import {
 import { FC, useEffect, useRef, useState } from "react";
 import { BsMic, BsMicMute, BsSquare } from "react-icons/bs";
 import { RxSpeakerLoud, RxSpeakerOff } from "react-icons/rx";
-import { AiOutlineClear } from "react-icons/ai";
+import {
+  AiOutlineClear,
+  AiOutlinePauseCircle,
+  AiOutlinePlayCircle,
+} from "react-icons/ai";
 import { callConnection } from "../domain/call";
 import { aiStateAtom, chatLogsAtom } from "../state";
 import { useRecoilState, useSetRecoilState } from "recoil";
@@ -21,11 +25,13 @@ import {
   AssistantFunctions,
   CancelQuestion,
   ClearHistory,
+  SetRecognizePaused,
 } from "@shinyoshiaki/gpt-voice-rpc";
 
 export const BottomController: FC<{}> = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [muted, setMuted] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [speaker, setSpeaker] = useState(true);
   const [aiState, setAiState] = useRecoilState(aiStateAtom);
   const setChatLogs = useSetRecoilState(chatLogsAtom);
@@ -47,6 +53,22 @@ export const BottomController: FC<{}> = () => {
     } else {
       callConnection.localAudio.enabled = false;
       setMuted(true);
+    }
+  };
+
+  const switchPause = () => {
+    if (paused) {
+      callConnection.sendMessage<SetRecognizePaused>({
+        type: "setRecognizePaused",
+        payload: { paused: false },
+      });
+      setPaused(false);
+    } else {
+      callConnection.sendMessage<SetRecognizePaused>({
+        type: "setRecognizePaused",
+        payload: { paused: true },
+      });
+      setPaused(true);
     }
   };
 
@@ -84,6 +106,13 @@ export const BottomController: FC<{}> = () => {
           icon={<Icon as={muted ? BsMicMute : BsMic} />}
           aria-label="mic-mute-unmute"
           onClick={switchMute}
+        />
+        <IconButton
+          icon={
+            <Icon as={paused ? AiOutlinePauseCircle : AiOutlinePlayCircle} />
+          }
+          aria-label="mic-pause-resume"
+          onClick={switchPause}
         />
         <IconButton
           icon={<Icon as={speaker ? RxSpeakerLoud : RxSpeakerOff} />}

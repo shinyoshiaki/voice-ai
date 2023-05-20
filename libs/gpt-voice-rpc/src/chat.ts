@@ -13,4 +13,13 @@ export interface ChangeModel extends RPC {
   payload: { model: string };
 }
 
-export type ChatFunctions = ClearHistory | CancelQuestion | ChangeModel;
+export interface SetRecognizePaused extends RPC {
+  type: "setRecognizePaused";
+  payload: { paused: boolean };
+}
+
+export type ChatFunctions =
+  | ClearHistory
+  | CancelQuestion
+  | SetRecognizePaused
+  | ChangeModel;

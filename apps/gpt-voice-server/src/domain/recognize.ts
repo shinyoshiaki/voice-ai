@@ -21,7 +21,7 @@ const ngWordsStartWith = [
   .reverse();
 
 export class RecognizeVoice {
-  session!: RecognizeSession;
+  private session!: RecognizeSession;
   onRecognized = new Event<[string]>();
   onRecognizing = new Event<[string]>();
   private _muted = false;
@@ -30,6 +30,18 @@ export class RecognizeVoice {
     this._muted = muted;
   }
 
+  private _paused = false;
+  setPaused(paused: boolean) {
+    this._paused = paused;
+    if (!paused) {
+      if (this.textBuffer) {
+        this.onRecognized.execute(this.textBuffer);
+        this.textBuffer = "";
+      }
+    }
+  }
+  private textBuffer = "";
+
   private async init() {
     this.session = await sessionFactory.create();
     this.session.onText.subscribe(async (res) => {
@@ -37,13 +49,19 @@ export class RecognizeVoice {
         return;
       }
 
+      if (res.partial) {
+        const recognizing = res.partial;
+        if (recognizing.length === 1) {
+          return;
+        }
+
+        this.onRecognizing.execute(this.textBuffer + recognizing);
+      }
+
       if (res.result) {
         let recognized = res.result;
 
         if (recognized.length === 1) {
-          return;
-        }
-        if (ngWordsStartWith.includes(recognized)) {
           return;
         }
 
@@ -54,19 +72,14 @@ export class RecognizeVoice {
           }
         }
 
-        this.onRecognized.execute(recognized);
-      }
+        this.textBuffer += recognized;
 
-      if (res.partial) {
-        const recognizing = res.partial;
-        if (recognizing.length === 1) {
-          return;
-        }
-        if (ngWordsStartWith.includes(recognizing)) {
+        if (this._paused) {
           return;
         }
 
-        this.onRecognizing.execute(recognizing);
+        this.onRecognized.execute(this.textBuffer);
+        this.textBuffer = "";
       }
     });
   }

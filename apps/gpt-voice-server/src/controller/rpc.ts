@@ -1,5 +1,5 @@
 import { ChatFunctions } from "../../../../libs/gpt-voice-rpc/src";
-import { assistantUsecase } from "../bootstrap";
+import { assistantUsecase, userUsecase } from "../bootstrap";
 
 import { SessionService } from "../infrastructure/sessionService";
 import { Logger } from "../logger";
@@ -26,6 +26,11 @@ export function rpcController(service: SessionService) {
       case "changeModel":
         {
           assistantUsecase.changeModel(service)(payload.model);
+        }
+        break;
+      case "setRecognizePaused":
+        {
+          userUsecase.setRecognizePaused(service)(payload.paused);
         }
         break;
     }

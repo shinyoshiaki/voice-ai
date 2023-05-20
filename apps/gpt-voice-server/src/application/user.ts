@@ -76,4 +76,10 @@ export class UserUsecase {
         });
       } catch (error) {}
     };
+
+  setRecognizePaused =
+    ({ recognizeVoice }: SessionService) =>
+    (paused: boolean) => {
+      recognizeVoice.setPaused(paused);
+    };
 }
