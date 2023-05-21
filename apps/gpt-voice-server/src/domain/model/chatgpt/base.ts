@@ -61,7 +61,9 @@ const SYSTEM_PROMPT =
 
 export abstract class ChatGpt extends AssistantModel {
   private openai = new OpenAIApi(conf);
-  private messageBuffer: string[] = [];
+  // アシスタントの中間回答(区切り文字単位)を保持するバッファ
+  private messageBuffer = "";
+  // アシスタントの回答を保持するバッファ
   private sentenceBuffer = "";
   private marks = ["、", "。", "・", "！", "?", "？", "：", ". ", "-", "."];
   stopped = false;
@@ -69,10 +71,6 @@ export abstract class ChatGpt extends AssistantModel {
 
   constructor(private props: { modelName: string }) {
     super();
-  }
-
-  importHistory(history: ChatCompletionRequestMessage[]): void {
-    this.conversationHistory = history;
   }
 
   private async systemConversation(): Promise<ChatCompletionRequestMessage[]> {
@@ -85,12 +83,11 @@ export abstract class ChatGpt extends AssistantModel {
   }
 
   private response(word: string, end = false) {
-    this.messageBuffer.push(word);
+    this.messageBuffer += word;
     if (this.marks.find((mark) => word.includes(mark)) || end) {
-      const message = this.messageBuffer.join("");
-      this.sentenceBuffer += message;
-      this.onResponse.execute({ message, end });
-      this.messageBuffer = [];
+      this.sentenceBuffer += this.messageBuffer;
+      this.onResponse.execute({ message: this.messageBuffer, end });
+      this.messageBuffer = "";
 
       if (end) {
         if (!this.sentenceBuffer) {
@@ -106,7 +103,7 @@ export abstract class ChatGpt extends AssistantModel {
   }
 
   stop() {
-    this.messageBuffer = [];
+    this.messageBuffer = "";
     this.stopped = true;
   }
 
@@ -159,9 +156,5 @@ export abstract class ChatGpt extends AssistantModel {
         }
       }
     }
-  }
-
-  clearHistory() {
-    this.conversationHistory = [];
   }
 }

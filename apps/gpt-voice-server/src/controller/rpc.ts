@@ -25,7 +25,7 @@ export function rpcController(service: SessionService) {
         break;
       case "changeModel":
         {
-          assistantUsecase.changeModel(service)(payload.model);
+          await assistantUsecase.changeModel(service)(payload.model);
         }
         break;
       case "setRecognizePaused":

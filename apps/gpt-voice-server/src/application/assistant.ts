@@ -76,11 +76,11 @@ export class AssistantUsecase {
       }
     };
 
-  changeModel = (service: SessionService) => (model: string) => {
+  changeModel = (service: SessionService) => async (model: string) => {
     if (service.gptSession.modelName === model) return;
 
     service.gptSession.stop();
-    const newSession = assistantModelFactory(model);
+    const newSession = await assistantModelFactory(model);
     newSession.importHistory(service.gptSession.conversationHistory);
     service.gptSession = newSession;
 

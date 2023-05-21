@@ -25,7 +25,7 @@ export class SessionService {
     const recognizeVoice = await RecognizeVoice.Create();
     const chatLog = new ChatLogManager();
     const tts = new TtsSession(audio);
-    const gptSession = assistantModelFactory(model);
+    const gptSession = await assistantModelFactory(model);
 
     return new SessionService(
       connection,

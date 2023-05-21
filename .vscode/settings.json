@@ -3,11 +3,15 @@
     "Chakra",
     "Depacketize",
     "depacketizer",
+    "langchain",
     "openai",
     "openapi",
+    "serpapi",
+    "serper",
     "typebox",
     "voicevox",
     "vosk",
+    "webbrowser",
     "werift"
   ]
 }

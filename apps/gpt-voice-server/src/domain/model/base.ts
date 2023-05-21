@@ -9,6 +9,11 @@ export abstract class AssistantModel {
   stopped = false;
   abstract stop(): void;
   abstract request(message: string): Promise<void>;
-  abstract clearHistory(): void;
-  abstract importHistory(history: ChatCompletionRequestMessage[]): void;
+
+  clearHistory() {
+    this.conversationHistory = [];
+  }
+  importHistory(history: ChatCompletionRequestMessage[]): void {
+    this.conversationHistory = history;
+  }
 }

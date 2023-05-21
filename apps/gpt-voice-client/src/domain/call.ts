@@ -22,7 +22,7 @@ class CallConnection {
     });
     this.peer = peer;
     const { sdp, sessionId, models } = (await api.call.callCreate()).data;
-
+    console.log({ sessionId, models });
     this.models = models;
 
     peer.onicecandidate = async ({ candidate }) => {

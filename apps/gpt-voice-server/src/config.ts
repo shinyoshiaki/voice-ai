@@ -5,4 +5,6 @@ export const config = {
   openai: credentials.openai,
   modelPath: env.modelPath,
   port: env.voiceServer.port,
+  serpapi: credentials.serpapi,
+  serper: credentials.serper,
 };
