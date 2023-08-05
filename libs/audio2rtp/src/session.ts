@@ -2,6 +2,7 @@ import { Socket, createSocket } from "dgram";
 import { rm, writeFile } from "fs/promises";
 import {
   PromiseQueue,
+  RtpHeader,
   RtpPacket,
   randomPort,
   uint16Add,
@@ -15,46 +16,12 @@ import { WaveFile } from "wavefile";
 export class Audio2Rtp {
   private udp?: Socket;
   onRtp = new Event<[RtpPacket]>();
-  private replace = false;
-  private seqOffset: number = 0;
-  private timestampOffset: number = 0;
-  private sequenceNumber?: number;
-  private timestamp?: number;
+  private sequenceNumber: number = 0;
+  private timestamp: number = 0;
 
   private constructor() {}
 
-  private listenUdp(port: number) {
-    if (this.udp) {
-      this.udp.close();
-    }
-    this.udp = createSocket("udp4");
-    this.udp.bind(port);
-
-    this.udp.on("message", (data) => {
-      const rtp = RtpPacket.deSerialize(data);
-      const header = rtp.header;
-      const { sequenceNumber, timestamp } = header;
-
-      if (this.replace) {
-        if (this.sequenceNumber != undefined) {
-          this.seqOffset = uint16Add(this.sequenceNumber, -sequenceNumber);
-        }
-        if (this.timestamp != undefined) {
-          this.timestampOffset = uint32Add(this.timestamp, -timestamp);
-        }
-
-        this.replace = false;
-      }
-
-      header.sequenceNumber = uint16Add(header.sequenceNumber, this.seqOffset);
-      header.timestamp = uint32Add(header.timestamp, this.timestampOffset);
-
-      this.sequenceNumber = header.sequenceNumber;
-      this.timestamp = header.timestamp;
-
-      this.onRtp.execute(rtp);
-    });
-  }
+  private listenUdp(port: number) {}
 
   static async Create() {
     const audio = new Audio2Rtp();
@@ -97,36 +64,27 @@ export class Audio2Rtp {
 
     if (buf) {
       await this.queue.push(async () => {
-        const filePath = `./tmp${randomUUID()}.wav`;
-        console.log("speaking:" + filePath);
-        console.time("speaking:" + filePath);
-
-        this.replace = true;
-        const port = await randomPort();
-        this.listenUdp(port);
-        await writeFile(filePath, buf);
-
-        console.time("duration:" + filePath);
         const wav = new WaveFile(buf);
         const fmt = wav.fmt as any;
         const data = wav.data as any;
         const sampleRate = fmt.sampleRate;
         const numSamples = (data.samples.length / fmt.bitsPerSample) * 8;
         const duration = numSamples / sampleRate;
-        console.timeEnd("duration:" + filePath);
+        wav.toALaw();
+        const alaw = wav.toBuffer();
 
-        const process = exec(
-          `gst-launch-1.0 filesrc location=${filePath} ! decodebin ! audioconvert ! audioresample ! audio/x-raw, rate=48000 ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${port}`
+        const rtp = new RtpPacket(
+          new RtpHeader({
+            ssrc: 0,
+            timestamp: this.timestamp,
+            sequenceNumber: this.sequenceNumber,
+          }),
+          Buffer.from(alaw)
         );
-        process.on("error", (code) => {
-          console.error({ code });
-        });
+        this.onRtp.execute(rtp);
+        this.timestamp = uint32Add(this.timestamp, numSamples);
+        this.sequenceNumber = uint16Add(this.sequenceNumber, 1);
         await new Promise((r) => setTimeout(r, duration * 1000));
-        process.kill();
-
-        await rm(filePath);
-
-        console.timeEnd("speaking:" + filePath);
       });
     } else {
       await this.queue.push(async () => {});
