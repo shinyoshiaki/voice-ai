@@ -33,6 +33,9 @@ export function rpcController(service: SessionService) {
           userUsecase.setRecognizePaused(service)(payload.paused);
         }
         break;
+      case "clearTextBuffer": {
+        userUsecase.clearTextBuffer(service)();
+      }
     }
   });
   return unSubscribe;

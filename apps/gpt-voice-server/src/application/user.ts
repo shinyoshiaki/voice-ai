@@ -82,4 +82,10 @@ export class UserUsecase {
     (paused: boolean) => {
       recognizeVoice.setPaused(paused);
     };
+
+  clearTextBuffer =
+    ({ recognizeVoice }: SessionService) =>
+    () => {
+      recognizeVoice.clearTextBuffer();
+    };
 }

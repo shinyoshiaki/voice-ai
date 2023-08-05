@@ -19,7 +19,7 @@ import {
   AiOutlinePlayCircle,
 } from "react-icons/ai";
 import { callConnection } from "../domain/call";
-import { aiStateAtom, chatLogsAtom } from "../state";
+import { aiStateAtom, chatLogsAtom, pauseStateAtom } from "../state";
 import { useRecoilState, useSetRecoilState } from "recoil";
 import {
   AssistantFunctions,
@@ -31,8 +31,8 @@ import {
 export const BottomController: FC<{}> = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [muted, setMuted] = useState(false);
-  const [paused, setPaused] = useState(false);
   const [speaker, setSpeaker] = useState(true);
+  const [paused, setPaused] = useRecoilState(pauseStateAtom);
   const [aiState, setAiState] = useRecoilState(aiStateAtom);
   const setChatLogs = useSetRecoilState(chatLogsAtom);
 

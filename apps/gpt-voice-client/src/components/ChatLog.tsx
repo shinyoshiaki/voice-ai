@@ -1,19 +1,31 @@
-import { Box, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Flex,
+  HStack,
+  Icon,
+  IconButton,
+  Stack,
+  Text,
+} from "@chakra-ui/react";
 import { FC, useEffect } from "react";
 
-import { ChatLog, chatLogsAtom } from "../state";
+import { ChatLog, chatLogsAtom, pauseStateAtom } from "../state";
 import { callConnection } from "../domain/call";
 import { useRecoilState } from "recoil";
 import {
   AssistantFunctions,
   ChatFunctions,
+  ClearTextBuffer,
   UserFunctions,
 } from "@shinyoshiaki/gpt-voice-rpc";
+import { AiOutlineClear } from "react-icons/ai";
 
 const thinkingWord = "思考中";
 
 export const ChatLogs: FC = () => {
   const [chatLogs, setChatLogs] = useRecoilState(chatLogsAtom);
+  const [paused] = useRecoilState(pauseStateAtom);
 
   const addLog = (log: ChatLog, role: "user" | "assistant") => {
     setChatLogs((prev) => ({
@@ -100,19 +112,42 @@ export const ChatLogs: FC = () => {
     <Box>
       {Object.values(chatLogs)
         .sort((a, b) => a.index - b.index)
-        .map((chatLog) => (
-          <ChatLogView log={chatLog} key={chatLog.index} />
+        .map((chatLog, i) => (
+          <ChatLogView
+            log={chatLog}
+            key={chatLog.index}
+            processing={
+              Object.values(chatLogs).length === i + 1 &&
+              chatLog.role === "user" &&
+              paused === true
+            }
+          />
         ))}
     </Box>
   );
 };
 
-const ChatLogView: FC<{ log: ChatLog }> = ({ log }) => {
+const ChatLogView: FC<{ log: ChatLog; processing?: boolean }> = ({
+  log,
+  processing,
+}) => {
+  const clearTextBuffer = () => {
+    callConnection.sendMessage<ClearTextBuffer>({ type: "clearTextBuffer" });
+  };
+
   return (
-    <Box>
+    <HStack>
+      {processing && (
+        <IconButton
+          icon={<Icon as={AiOutlineClear} />}
+          aria-label="clear"
+          size={"xs"}
+          onClick={clearTextBuffer}
+        />
+      )}
       <Text>
         {log.role} {log.content}
       </Text>
-    </Box>
+    </HStack>
   );
 };

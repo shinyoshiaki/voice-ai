@@ -18,8 +18,13 @@ export interface SetRecognizePaused extends RPC {
   payload: { paused: boolean };
 }
 
+export interface ClearTextBuffer extends RPC {
+  type: "clearTextBuffer";
+}
+
 export type ChatFunctions =
   | ClearHistory
   | CancelQuestion
   | SetRecognizePaused
+  | ClearTextBuffer
   | ChangeModel;

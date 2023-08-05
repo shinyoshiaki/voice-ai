@@ -83,6 +83,11 @@ export class RecognizeVoice {
     });
   }
 
+  clearTextBuffer() {
+    this.textBuffer = "";
+    this.onRecognizing.execute("");
+  }
+
   private recognized() {
     if (this.textBuffer) {
       this.state = "waiting";

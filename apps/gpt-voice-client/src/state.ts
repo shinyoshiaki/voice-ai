@@ -22,3 +22,8 @@ export const aiStateAtom = atom<
   key: v4(),
   default: "waiting",
 });
+
+export const pauseStateAtom = atom<boolean>({
+  key: v4(),
+  default: false,
+});
