@@ -8,9 +8,13 @@ import {
 } from "../../../../libs/gpt-voice-api/src";
 
 export async function call(req: FastifyRequest<{}>, reply: FastifyReply) {
-  const { id, sdp, models } = await callUsecase.call();
-  const response: CallCreateResponseBody = { sessionId: id, sdp, models };
-  await reply.code(201).send(response);
+  try {
+    const { id, sdp, models } = await callUsecase.call();
+    const response: CallCreateResponseBody = { sessionId: id, sdp, models };
+    await reply.code(201).send(response);
+  } catch (error: any) {
+    await reply.code(500).send({ error: error.message });
+  }
 }
 
 export async function callAnswer(
@@ -20,11 +24,15 @@ export async function callAnswer(
   }>,
   reply: FastifyReply
 ) {
-  const { sdp } = req.body;
-  const { sessionId } = req.params;
+  try {
+    const { sdp } = req.body;
+    const { sessionId } = req.params;
 
-  await callUsecase.answer({ answer: sdp, sessionId });
-  await reply.code(200).send({});
+    await callUsecase.answer({ answer: sdp, sessionId });
+    await reply.code(200).send({});
+  } catch (error: any) {
+    await reply.code(500).send({ error: error.message });
+  }
 }
 
 export async function callIceCandidate(

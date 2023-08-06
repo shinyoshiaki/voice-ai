@@ -5,6 +5,7 @@ import {
   RTCIceCandidate,
   RTCRtpHeaderExtensionParameters,
   RTP_EXTENSION_URI,
+  RTCRtpCodecParameters,
 } from "werift";
 
 export class CallConnection {
@@ -16,9 +17,29 @@ export class CallConnection {
         }),
       ],
     },
+    codecs: {
+      audio: [
+        new RTCRtpCodecParameters({
+          mimeType: "audio/pcmu",
+          payloadType: 0,
+          clockRate: 8000,
+          channels: 1,
+          direction: "sendonly",
+        }),
+        new RTCRtpCodecParameters({
+          mimeType: "audio/opus",
+          clockRate: 48000,
+          channels: 2,
+          direction: "recvonly",
+        }),
+      ],
+    },
   });
-  private transceiver = this.pc.addTransceiver("audio", {
-    direction: "sendrecv",
+  private receiver = this.pc.addTransceiver("audio", {
+    direction: "recvonly",
+  });
+  private sender = this.pc.addTransceiver("audio", {
+    direction: "sendonly",
   });
   private dc = this.pc.createDataChannel("messaging");
   onRtp = new Event<[RtpPacket]>();
@@ -26,7 +47,7 @@ export class CallConnection {
   onClosed = new Event();
 
   constructor() {
-    this.transceiver.onTrack.once((track) => {
+    this.receiver.onTrack.once((track) => {
       track.onReceiveRtp.subscribe((rtp) => {
         this.onRtp.execute(rtp);
       });
@@ -59,7 +80,7 @@ export class CallConnection {
   }
 
   async sendRtp(rtp: RtpPacket) {
-    await this.transceiver.sender.sendRtp(rtp);
+    await this.sender.sender.sendRtp(rtp);
   }
 
   sendMessage<T = object>(message: T) {
