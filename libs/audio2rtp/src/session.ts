@@ -1,37 +1,23 @@
-import { Socket, createSocket } from "dgram";
-import { rm, writeFile } from "fs/promises";
 import {
   PromiseQueue,
   RtpHeader,
   RtpPacket,
-  randomPort,
   uint16Add,
   uint32Add,
 } from "werift-rtp";
 import { Event } from "rx.mini";
-import { randomUUID } from "crypto";
-import { exec } from "child_process";
 import { WaveFile } from "wavefile";
 
 export class Audio2Rtp {
-  private udp?: Socket;
   onRtp = new Event<[RtpPacket]>();
   private sequenceNumber: number = 0;
   private timestamp: number = 0;
 
   private constructor() {}
 
-  private listenUdp(port: number) {}
-
   static async Create() {
     const audio = new Audio2Rtp();
-    await audio.init();
     return audio;
-  }
-
-  private async init() {
-    const port = await randomPort();
-    this.listenUdp(port);
   }
 
   private queue = new PromiseQueue();
@@ -67,11 +53,6 @@ export class Audio2Rtp {
       buf = amplifyWavBuffer(buf, 10);
       await this.queue.push(async () => {
         const wav = new WaveFile(buf);
-        const fmt = wav.fmt as any;
-        const data = wav.data as any;
-        const sampleRate = fmt.sampleRate;
-        const numSamples = (data.samples.length / fmt.bitsPerSample) * 8;
-        const duration = numSamples / sampleRate;
         wav.toSampleRate(8000);
         wav.toMuLaw();
         const uLaw = wav.toBuffer();
