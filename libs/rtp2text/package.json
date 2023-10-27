@@ -4,8 +4,13 @@
   "description": "",
   "license": "ISC",
   "author": "",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
   "scripts": {
+    "build": "tsc",
+    "deploy": "npm run build && npm publish",
     "client": "parcel ./example/client/index.html",
     "server": "ts-node-dev example/server.ts"
   },
@@ -14,7 +19,7 @@
     "vosk": "^0.3.39",
     "fluent-ffmpeg": "^2.1.2",
     "@discordjs/opus": "^0.9.0",
-    "werift-rtp": "0.7.11-rc.0"
+    "werift-rtp": "0.7.20"
   },
   "devDependencies": {
     "@types/react": "^18.0.33",

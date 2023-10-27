@@ -1,11 +1,16 @@
 {
-  "name": "voicevox-client",
+  "name": "@shinyoshiaki/voicevox-client",
   "version": "0.0.1",
   "description": "",
   "license": "ISC",
   "author": "",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
   "scripts": {
+    "build": "tsc",
+    "deploy": "npm run build && npm publish --access public",
     "example:client": "parcel examples/to-webrtc/client/index.html",
     "example:webrtc": "ts-node-dev examples/to-webrtc/server.ts"
   },
