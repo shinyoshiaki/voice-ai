@@ -12,6 +12,10 @@ import { randomUUID } from "crypto";
 import { exec } from "child_process";
 import { WaveFile } from "wavefile";
 
+export interface Options {
+  logging?: boolean;
+}
+
 export class Audio2Rtp {
   private udp?: Socket;
   onRtp = new Event<[RtpPacket]>();
@@ -21,7 +25,7 @@ export class Audio2Rtp {
   private sequenceNumber?: number;
   private timestamp?: number;
 
-  private constructor() {}
+  private constructor(private options: Options) {}
 
   private listenUdp(port: number) {
     if (this.udp) {
@@ -56,8 +60,8 @@ export class Audio2Rtp {
     });
   }
 
-  static async Create() {
-    const audio = new Audio2Rtp();
+  static async Create(options: Options = {}) {
+    const audio = new Audio2Rtp(options);
     await audio.init();
     return audio;
   }
@@ -98,22 +102,29 @@ export class Audio2Rtp {
     if (buf) {
       await this.queue.push(async () => {
         const filePath = `./tmp${randomUUID()}.wav`;
-        console.log("speaking:" + filePath);
-        console.time("speaking:" + filePath);
+
+        if (this.options.logging) {
+          console.log("speaking:" + filePath);
+          console.time("speaking:" + filePath);
+        }
 
         this.replace = true;
         const port = await randomPort();
         this.listenUdp(port);
         await writeFile(filePath, buf);
 
-        console.time("duration:" + filePath);
+        if (this.options.logging) {
+          console.time("duration:" + filePath);
+        }
         const wav = new WaveFile(buf);
         const fmt = wav.fmt as any;
         const data = wav.data as any;
         const sampleRate = fmt.sampleRate;
         const numSamples = (data.samples.length / fmt.bitsPerSample) * 8;
         const duration = numSamples / sampleRate;
-        console.timeEnd("duration:" + filePath);
+        if (this.options.logging) {
+          console.timeEnd("duration:" + filePath);
+        }
 
         const process = exec(
           `gst-launch-1.0 filesrc location=${filePath} ! decodebin ! audioconvert ! audioresample ! audio/x-raw, rate=48000 ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${port}`
@@ -126,7 +137,9 @@ export class Audio2Rtp {
 
         await rm(filePath);
 
-        console.timeEnd("speaking:" + filePath);
+        if (this.options.logging) {
+          console.timeEnd("speaking:" + filePath);
+        }
       });
     } else {
       await this.queue.push(async () => {});
